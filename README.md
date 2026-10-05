@@ -4,8 +4,15 @@ O Achaê será desenvolvido, para esta disciplina, como um aplicativo mobile edu
 
 A ideia central é permitir que o usuário encontre profissionais cadastrados por categoria de serviço e visualize suas principais informações. Os dados serão armazenados localmente no dispositivo utilizando um banco de dados local.
 
-
 --- 
+
+### Documentação Completa ###
+
+
+[Baixar Documentação Completa](https://docs.google.com/document/d/1_U8aA74eZM2WyLeet7y7P1_ehIglw4e0nK3u6wLXLQI/export?format=pdf)
+
+
+---
 
 ### Como Contribuir
 Mantemos um fluxo de trabalho rigoroso para garantir a qualidade do código e do histórico.

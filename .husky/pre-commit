@@ -1,1 +1,9 @@
-pnpm test
+#!/bin/sh
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$branch" = "main" ] || [ "$branch" = "dev" ]; then
+  echo "Erro: commits diretos na branch '$branch' não são permitidos."
+  echo "Crie uma branch feature/* e abra um Pull Request."
+  exit 1
+fi

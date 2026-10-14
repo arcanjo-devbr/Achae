@@ -73,7 +73,7 @@ export default function Index() {
                   dadosProfissional={item} 
                   selecionarServico={() => 
                       router.push({
-                       pathname: "/profissionais/[id]",
+                       pathname: "/profissional/detalhes",
                        params: {
                            id: item.id.toString(),
                          },

@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
 
   textoSelecionado: {
     color: "#FFFFFF",
+    
   },
 
   listaProfissionais: {

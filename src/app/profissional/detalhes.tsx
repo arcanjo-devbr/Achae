@@ -15,20 +15,24 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function DetalhesProfissional() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const [profissional, setProfissional] = useState<Profissional | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [falhaAoCarregar, setFalhaAoCarregar] = useState(false);
+  const idProfissional = Array.isArray(id) ? id[0] : id;
+  const [resultado, setResultado] = useState<
+    | { id: string; profissional: Profissional | null }
+    | { id: string; erro: true }
+    | null
+  >(null);
+  const resultadoAtual = resultado?.id === idProfissional ? resultado : null;
+  const carregando = Boolean(idProfissional) && resultadoAtual === null;
+  const falhaAoCarregar = resultadoAtual !== null && "erro" in resultadoAtual;
+  const profissional =
+    resultadoAtual !== null && "profissional" in resultadoAtual
+      ? resultadoAtual.profissional
+      : null;
 
   useEffect(() => {
     let ativo = true;
-    const idProfissional = Array.isArray(id) ? id[0] : id;
-
-    setCarregando(true);
-    setFalhaAoCarregar(false);
-    setProfissional(null);
 
     if (!idProfissional) {
-      setCarregando(false);
       return () => {
         ativo = false;
       };
@@ -37,9 +41,11 @@ export default function DetalhesProfissional() {
     void carregarProfissionais()
       .then((lista) => {
         if (ativo) {
-          setProfissional(
-            lista.find((item) => String(item.id) === idProfissional) ?? null,
-          );
+          setResultado({
+            id: idProfissional,
+            profissional:
+              lista.find((item) => String(item.id) === idProfissional) ?? null,
+          });
         }
       })
       .catch((erro: unknown) => {
@@ -48,19 +54,14 @@ export default function DetalhesProfissional() {
           erro,
         );
         if (ativo) {
-          setFalhaAoCarregar(true);
-        }
-      })
-      .finally(() => {
-        if (ativo) {
-          setCarregando(false);
+          setResultado({ id: idProfissional, erro: true });
         }
       });
 
     return () => {
       ativo = false;
     };
-  }, [id]);
+  }, [idProfissional]);
 
   return (
     <ScrollView

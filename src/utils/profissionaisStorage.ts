@@ -15,8 +15,16 @@ function validarProfissional(valor: unknown): valor is Profissional {
     typeof profissional.id === "number" &&
     typeof profissional.nome === "string" &&
     typeof profissional.profissao === "string" &&
+    typeof profissional.categoria === "string" &&
     typeof profissional.localizacao === "string" &&
-    (typeof profissional.imagem === "string" || profissional.imagem === null)
+    (typeof profissional.imagem === "string" || profissional.imagem === null) &&
+    (profissional.telefone === undefined ||
+      typeof profissional.telefone === "string") &&
+    (profissional.descricao === undefined ||
+      typeof profissional.descricao === "string") &&
+    (profissional.status === undefined ||
+      profissional.status === "Ativo" ||
+      profissional.status === "Inativo")
   );
 }
 
@@ -31,7 +39,10 @@ async function lerProfissionaisSalvos() {
     const valor: unknown = JSON.parse(valorArmazenado);
 
     if (Array.isArray(valor) && valor.every(validarProfissional)) {
-      return valor;
+      return valor.map((profissional) => ({
+        ...profissional,
+        status: profissional.status ?? "Ativo",
+      }));
     }
   } catch {}
 

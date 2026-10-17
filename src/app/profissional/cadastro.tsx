@@ -29,6 +29,29 @@ const categorias = [
   "Outros",
 ];
 
+function formatarTelefone(valor: string) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+
+  if (digitos.length <= 2) {
+    return digitos.length ? `(${digitos}` : "";
+  }
+
+  if (digitos.length <= 6) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  }
+
+  if (digitos.length <= 10) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  }
+
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
+
+function telefoneValido(valor: string) {
+  const digitos = valor.replace(/\D/g, "");
+  return digitos.length === 10 || digitos.length === 11;
+}
+
 export default function CadastroProfissional() {
   const insets = useSafeAreaInsets();
 
@@ -111,6 +134,14 @@ export default function CadastroProfissional() {
       return;
     }
 
+    if (!telefoneValido(rascunho.telefone)) {
+      Alert.alert(
+        "Telefone inválido",
+        "Informe um telefone com DDD e 10 ou 11 dígitos.",
+      );
+      return;
+    }
+
     setSalvando(true);
 
     try {
@@ -126,7 +157,17 @@ export default function CadastroProfissional() {
         descricao: rascunho.descricaoServicos.trim(),
       });
       await removerRascunhoCadastroProfissional();
-      router.replace("/");
+
+      Alert.alert(
+        "Cadastro realizado!",
+        "O profissional foi cadastrado com sucesso.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/"),
+          },
+        ],
+      );
     } catch (erro) {
       console.error("Não foi possível cadastrar o profissional.", erro);
       Alert.alert(
@@ -184,7 +225,8 @@ export default function CadastroProfissional() {
           placeholderTextColor="#94A3B8"
           keyboardType="phone-pad"
           value={rascunho.telefone}
-          onChangeText={(valor) => atualizarCampo("telefone", valor)}
+          onChangeText={(valor) => 
+            atualizarCampo("telefone", formatarTelefone(valor))}
         />
 
         <Text style={styles.rotulo}>Profissão *</Text>

@@ -1,20 +1,20 @@
 import { salvarProfissional } from "@/utils/profissionaisStorage";
 import {
-    recuperarRascunhoCadastroProfissional,
-    removerRascunhoCadastroProfissional,
-    salvarRascunhoCadastroProfissional,
-    type RascunhoCadastroProfissional,
+  recuperarRascunhoCadastroProfissional,
+  removerRascunhoCadastroProfissional,
+  salvarRascunhoCadastroProfissional,
+  type RascunhoCadastroProfissional,
 } from "@/utils/rascunhoCadastroProfissional";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -119,8 +119,11 @@ export default function CadastroProfissional() {
         id: Date.now(),
         nome: rascunho.nome.trim(),
         profissao: rascunho.profissao.trim(),
+        categoria: rascunho.categoria,
         localizacao: rascunho.cidade.trim(),
         imagem: null,
+        telefone: rascunho.telefone.trim(),
+        descricao: rascunho.descricaoServicos.trim(),
       });
       await removerRascunhoCadastroProfissional();
       router.replace("/");

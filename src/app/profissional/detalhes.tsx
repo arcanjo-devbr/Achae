@@ -1,12 +1,66 @@
-import { profissionais } from "@/data/profissionais";
+import type { Profissional } from "@/types/Profissional";
+import { carregarProfissionais } from "@/utils/profissionaisStorage";
 import { router, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DetalhesProfissional() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const profissional = profissionais.find((item) => String(item.id) === id);
+  const [profissional, setProfissional] = useState<Profissional | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [falhaAoCarregar, setFalhaAoCarregar] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    const idProfissional = Array.isArray(id) ? id[0] : id;
+
+    setCarregando(true);
+    setFalhaAoCarregar(false);
+    setProfissional(null);
+
+    if (!idProfissional) {
+      setCarregando(false);
+      return () => {
+        ativo = false;
+      };
+    }
+
+    void carregarProfissionais()
+      .then((lista) => {
+        if (ativo) {
+          setProfissional(
+            lista.find((item) => String(item.id) === idProfissional) ?? null,
+          );
+        }
+      })
+      .catch((erro: unknown) => {
+        console.error(
+          "Não foi possível carregar os dados do profissional.",
+          erro,
+        );
+        if (ativo) {
+          setFalhaAoCarregar(true);
+        }
+      })
+      .finally(() => {
+        if (ativo) {
+          setCarregando(false);
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [id]);
 
   return (
     <ScrollView
@@ -23,7 +77,24 @@ export default function DetalhesProfissional() {
         <Text style={styles.tituloCabecalho}>Detalhes do profissional</Text>
       </View>
 
-      {profissional ? (
+      {carregando ? (
+        <View style={styles.estadoVazio}>
+          <ActivityIndicator color="#2563EB" />
+          <Text style={styles.descricao}>
+            Carregando dados do profissional...
+          </Text>
+        </View>
+      ) : falhaAoCarregar ? (
+        <View style={styles.estadoVazio}>
+          <Text style={styles.nomeProfissional}>Não foi possível carregar</Text>
+          <Text style={styles.descricao}>
+            Ocorreu um erro ao acessar os dados. Tente novamente.
+          </Text>
+          <Pressable style={styles.botaoEditar} onPress={() => router.back()}>
+            <Text style={styles.textoBotaoEditar}>Voltar para a lista</Text>
+          </Pressable>
+        </View>
+      ) : profissional ? (
         <>
           <View style={styles.cartaoPerfil}>
             <View style={styles.avatar}>

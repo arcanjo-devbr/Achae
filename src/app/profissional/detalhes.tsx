@@ -1,5 +1,5 @@
 import type { Profissional } from "@/types/Profissional";
-import { carregarProfissionais } from "@/utils/profissionaisStorage";
+import { apagarProfissional, carregarProfissionais } from "@/utils/profissionaisStorage";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -158,11 +158,16 @@ export default function DetalhesProfissional() {
           </View>
 
           <View style={styles.acoes}>
-            <Pressable style={styles.botaoEditar} onPress={() => {}}>
+            <Pressable style={styles.botaoEditar}   onPress={() =>
+    router.push({
+      pathname: "/profissional/editar",
+      params: { id: profissional.id },
+    })
+  }>
               <Text style={styles.textoBotaoEditar}>Editar profissional</Text>
             </Pressable>
 
-            <Pressable style={styles.botaoExcluir} onPress={() => {}}>
+            <Pressable style={styles.botaoExcluir} onPress={() => apagarProfissional(profissional)}>
               <Text style={styles.textoBotaoExcluir}>Excluir profissional</Text>
             </Pressable>
           </View>

@@ -1,6 +1,7 @@
 import { profissionais as profissionaisIniciais } from "@/data/profissionais";
 import type { Profissional } from "@/types/Profissional";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 const CHAVE_PROFISSIONAIS = "@achae/profissionais";
 
@@ -28,7 +29,7 @@ function validarProfissional(valor: unknown): valor is Profissional {
   );
 }
 
-async function lerProfissionaisSalvos() {
+export async function lerProfissionaisSalvos() {
   const valorArmazenado = await AsyncStorage.getItem(CHAVE_PROFISSIONAIS);
 
   if (valorArmazenado === null) {
@@ -52,7 +53,7 @@ async function lerProfissionaisSalvos() {
 
 export async function carregarProfissionais(): Promise<Profissional[]> {
   const profissionaisSalvos = await lerProfissionaisSalvos();
-  return [...profissionaisIniciais, ...profissionaisSalvos];
+  return [...profissionaisSalvos];
 }
 
 export async function salvarProfissional(profissional: Profissional) {
@@ -61,4 +62,50 @@ export async function salvarProfissional(profissional: Profissional) {
     CHAVE_PROFISSIONAIS,
     JSON.stringify([...profissionaisSalvos, profissional]),
   );
+}
+
+
+
+export async function editarProfissionalStorage(
+  profissionalOriginal: Profissional,
+  novosDados: RascunhoCadastroProfissional,
+) {
+  const profissionaisSalvos = await lerProfissionaisSalvos();
+
+  const profissionaisAtualizados = profissionaisSalvos.map(
+    (profissional) =>
+      profissional.id === profissionalOriginal.id
+        ? {
+            ...profissional,
+            nome: novosDados.nome,
+            telefone: novosDados.telefone,
+            profissao: novosDados.profissao,
+            categoria: novosDados.categoria,
+            localizacao: novosDados.cidade,
+            descricao: novosDados.descricaoServicos,
+          }
+        : profissional,
+  );
+
+  await AsyncStorage.setItem(
+    CHAVE_PROFISSIONAIS,
+    JSON.stringify(profissionaisAtualizados),
+  );
+}
+
+export async function apagarProfissional(
+  { id }: Profissional,
+) {
+  const profissionaisSalvos = await lerProfissionaisSalvos();
+
+  const profissionaisNaoSelecionados = profissionaisSalvos.filter(
+    (profissional) => profissional.id !== id,
+  );
+
+  await AsyncStorage.setItem(
+    CHAVE_PROFISSIONAIS,
+    JSON.stringify(profissionaisNaoSelecionados),
+  );
+
+  router.back()
 }

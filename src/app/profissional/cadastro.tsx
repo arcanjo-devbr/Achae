@@ -28,6 +28,7 @@ const categorias = [
   "Manutenção",
   "Outros",
 ];
+const opcoesStatus = ["Ativo", "Inativo"] as const;
 
 export default function CadastroProfissional() {
   const insets = useSafeAreaInsets();
@@ -39,10 +40,10 @@ export default function CadastroProfissional() {
     categoria: "",
     cidade: "",
     descricaoServicos: "",
+    status: "Ativo",
   });
   const [rascunhoCarregado, setRascunhoCarregado] = useState(false);
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
-  const [status, setStatus] = useState("Ativo");
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -124,6 +125,7 @@ export default function CadastroProfissional() {
         imagem: null,
         telefone: rascunho.telefone.trim(),
         descricao: rascunho.descricaoServicos.trim(),
+        status: rascunho.status,
       });
       await removerRascunhoCadastroProfissional();
       router.replace("/");
@@ -270,19 +272,19 @@ export default function CadastroProfissional() {
         </Text>
 
         <View style={styles.opcoesStatus}>
-          {["Ativo", "Inativo"].map((opcao) => (
+          {opcoesStatus.map((opcao) => (
             <Pressable
               key={opcao}
               style={[
                 styles.botaoStatus,
-                status === opcao && styles.botaoStatusSelecionado,
+                rascunho.status === opcao && styles.botaoStatusSelecionado,
               ]}
-              onPress={() => setStatus(opcao)}
+              onPress={() => atualizarCampo("status", opcao)}
             >
               <Text
                 style={[
                   styles.textoStatus,
-                  status === opcao && styles.textoStatusSelecionado,
+                  rascunho.status === opcao && styles.textoStatusSelecionado,
                 ]}
               >
                 {opcao}

@@ -7,6 +7,7 @@ export type RascunhoCadastroProfissional = {
   categoria: string;
   cidade: string;
   descricaoServicos: string;
+  status: "Ativo" | "Inativo";
 };
 
 const CHAVE_RASCUNHO = "@achae/rascunho-cadastro-profissional";
@@ -20,7 +21,7 @@ function validarRascunho(
 
   const rascunho = valor as Record<string, unknown>;
 
-  return [
+  const camposTexto = [
     rascunho.nome,
     rascunho.telefone,
     rascunho.profissao,
@@ -28,6 +29,13 @@ function validarRascunho(
     rascunho.cidade,
     rascunho.descricaoServicos,
   ].every((campo) => typeof campo === "string");
+
+  return (
+    camposTexto &&
+    (rascunho.status === undefined ||
+      rascunho.status === "Ativo" ||
+      rascunho.status === "Inativo")
+  );
 }
 
 export async function recuperarRascunhoCadastroProfissional() {
@@ -41,7 +49,7 @@ export async function recuperarRascunhoCadastroProfissional() {
     const valor: unknown = JSON.parse(valorArmazenado);
 
     if (validarRascunho(valor)) {
-      return valor;
+      return { ...valor, status: valor.status ?? "Ativo" };
     }
   } catch {}
 

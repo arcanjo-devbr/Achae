@@ -8,6 +8,7 @@ export const profissionais: Profissional[] = [
     categoria: "Informática",
     localizacao: "Esperança, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 2,
@@ -16,6 +17,7 @@ export const profissionais: Profissional[] = [
     categoria: "Elétrica",
     localizacao: "Campina Grande, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 3,
@@ -24,6 +26,7 @@ export const profissionais: Profissional[] = [
     categoria: "Elétrica",
     localizacao: "João Pessoa, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 4,
@@ -32,6 +35,7 @@ export const profissionais: Profissional[] = [
     categoria: "Hidráulica",
     localizacao: "Esperança, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 5,
@@ -40,6 +44,7 @@ export const profissionais: Profissional[] = [
     categoria: "Hidráulica",
     localizacao: "Campina Grande, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 6,
@@ -48,6 +53,7 @@ export const profissionais: Profissional[] = [
     categoria: "Pintura",
     localizacao: "João Pessoa, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 7,
@@ -56,6 +62,7 @@ export const profissionais: Profissional[] = [
     categoria: "Pintura",
     localizacao: "Areia, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 8,
@@ -64,6 +71,7 @@ export const profissionais: Profissional[] = [
     categoria: "Construção",
     localizacao: "Esperança, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 9,
@@ -72,6 +80,7 @@ export const profissionais: Profissional[] = [
     categoria: "Construção",
     localizacao: "Campina Grande, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 10,
@@ -80,6 +89,7 @@ export const profissionais: Profissional[] = [
     categoria: "Informática",
     localizacao: "João Pessoa, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 11,
@@ -88,6 +98,7 @@ export const profissionais: Profissional[] = [
     categoria: "Informática",
     localizacao: "Areia, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 12,
@@ -96,6 +107,7 @@ export const profissionais: Profissional[] = [
     categoria: "Limpeza",
     localizacao: "Esperança, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 13,
@@ -104,6 +116,7 @@ export const profissionais: Profissional[] = [
     categoria: "Limpeza",
     localizacao: "Campina Grande, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 14,
@@ -112,6 +125,7 @@ export const profissionais: Profissional[] = [
     categoria: "Manutenção",
     localizacao: "João Pessoa, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 15,
@@ -120,6 +134,7 @@ export const profissionais: Profissional[] = [
     categoria: "Manutenção",
     localizacao: "Areia, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 16,
@@ -128,6 +143,7 @@ export const profissionais: Profissional[] = [
     categoria: "Outros",
     localizacao: "Esperança, PB",
     imagem: null,
+    status: "Ativo",
   },
   {
     id: 17,
@@ -136,5 +152,6 @@ export const profissionais: Profissional[] = [
     categoria: "Outros",
     localizacao: "Campina Grande, PB",
     imagem: null,
+    status: "Ativo",
   },
 ];

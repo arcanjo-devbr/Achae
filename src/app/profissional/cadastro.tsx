@@ -1,14 +1,20 @@
-
-import { router } from "expo-router";
-import { useState } from "react";
+import { salvarProfissional } from "@/utils/profissionaisStorage";
 import {
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  recuperarRascunhoCadastroProfissional,
+  removerRascunhoCadastroProfissional,
+  salvarRascunhoCadastroProfissional,
+  type RascunhoCadastroProfissional,
+} from "@/utils/rascunhoCadastroProfissional";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -22,13 +28,158 @@ const categorias = [
   "Manutenção",
   "Outros",
 ];
+const opcoesStatus = ["Ativo", "Inativo"] as const;
+
+function formatarTelefone(valor: string) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+
+  if (digitos.length <= 2) {
+    return digitos.length ? `(${digitos}` : "";
+  }
+
+  if (digitos.length <= 6) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  }
+
+  if (digitos.length <= 10) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  }
+
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
+
+function telefoneValido(valor: string) {
+  const digitos = valor.replace(/\D/g, "");
+  return digitos.length === 10 || digitos.length === 11;
+}
 
 export default function CadastroProfissional() {
   const insets = useSafeAreaInsets();
 
-  const [categoria, setCategoria] = useState("");
+  const [rascunho, setRascunho] = useState<RascunhoCadastroProfissional>({
+    nome: "",
+    telefone: "",
+    profissao: "",
+    categoria: "",
+    cidade: "",
+    descricaoServicos: "",
+    status: "Ativo",
+  });
+  const [rascunhoCarregado, setRascunhoCarregado] = useState(false);
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
-  const [status, setStatus] = useState("Ativo");
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarRascunho() {
+      try {
+        const rascunhoSalvo = await recuperarRascunhoCadastroProfissional();
+
+        if (!cancelado && rascunhoSalvo) {
+          setRascunho(rascunhoSalvo);
+        }
+
+        if (!cancelado) {
+          setRascunhoCarregado(true);
+        }
+      } catch (erro) {
+        console.error(
+          "Não foi possível recuperar o rascunho do cadastro.",
+          erro,
+        );
+      }
+    }
+
+    void carregarRascunho();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!rascunhoCarregado) {
+      return;
+    }
+
+    void salvarRascunhoCadastroProfissional(rascunho).catch((erro: unknown) => {
+      console.error("Não foi possível salvar o rascunho do cadastro.", erro);
+    });
+  }, [rascunho, rascunhoCarregado]);
+
+  function atualizarCampo<K extends keyof RascunhoCadastroProfissional>(
+    campo: K,
+    valor: RascunhoCadastroProfissional[K],
+  ) {
+    setRascunho((atual) => ({ ...atual, [campo]: valor }));
+  }
+
+  async function cadastrarProfissional() {
+    const camposObrigatorios: (keyof RascunhoCadastroProfissional)[] = [
+      "nome",
+      "telefone",
+      "profissao",
+      "categoria",
+      "cidade",
+    ];
+    const possuiCampoObrigatorioVazio = camposObrigatorios.some(
+      (campo) => !rascunho[campo].trim(),
+    );
+
+    if (possuiCampoObrigatorioVazio) {
+      Alert.alert(
+        "Campos obrigatórios",
+        "Preencha nome, telefone, profissão, categoria e cidade para continuar.",
+      );
+      return;
+    }
+
+    if (!telefoneValido(rascunho.telefone)) {
+      Alert.alert(
+        "Telefone inválido",
+        "Informe um telefone com DDD e 10 ou 11 dígitos.",
+      );
+      return;
+    }
+
+    setSalvando(true);
+
+    try {
+      await salvarRascunhoCadastroProfissional(rascunho);
+      await salvarProfissional({
+        id: Date.now(),
+        nome: rascunho.nome.trim(),
+        profissao: rascunho.profissao.trim(),
+        categoria: rascunho.categoria,
+        localizacao: rascunho.cidade.trim(),
+        imagem: null,
+        telefone: rascunho.telefone.trim(),
+        descricao: rascunho.descricaoServicos.trim(),
+        status: rascunho.status,
+      });
+      await removerRascunhoCadastroProfissional();
+
+      Alert.alert(
+        "Cadastro realizado!",
+        "O profissional foi cadastrado com sucesso.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/"),
+          },
+        ],
+      );
+    } catch (erro) {
+      console.error("Não foi possível cadastrar o profissional.", erro);
+      Alert.alert(
+        "Falha no cadastro",
+        "Não foi possível salvar o profissional. Os dados preenchidos foram mantidos para uma nova tentativa.",
+      );
+    } finally {
+      setSalvando(false);
+    }
+  }
 
   return (
     <ScrollView
@@ -43,12 +194,8 @@ export default function CadastroProfissional() {
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      {/* Cabeçalho */}
       <View style={styles.cabecalho}>
-        <Pressable
-          style={styles.botaoVoltar}
-          onPress={() => router.back()}
-        >
+        <Pressable style={styles.botaoVoltar} onPress={() => router.back()}>
           <Text style={styles.setaVoltar}>‹</Text>
         </Pressable>
 
@@ -60,7 +207,6 @@ export default function CadastroProfissional() {
         </View>
       </View>
 
-      {/* Dados pessoais */}
       <View style={styles.cartao}>
         <Text style={styles.tituloSecao}>Dados do profissional</Text>
 
@@ -70,6 +216,8 @@ export default function CadastroProfissional() {
           placeholder="Digite o nome completo"
           placeholderTextColor="#94A3B8"
           autoCapitalize="words"
+          value={rascunho.nome}
+          onChangeText={(valor) => atualizarCampo("nome", valor)}
         />
 
         <Text style={styles.rotulo}>Telefone *</Text>
@@ -78,6 +226,9 @@ export default function CadastroProfissional() {
           placeholder="(83) 99999-9999"
           placeholderTextColor="#94A3B8"
           keyboardType="phone-pad"
+          value={rascunho.telefone}
+          onChangeText={(valor) => 
+            atualizarCampo("telefone", formatarTelefone(valor))}
         />
 
         <Text style={styles.rotulo}>Profissão *</Text>
@@ -86,9 +237,10 @@ export default function CadastroProfissional() {
           placeholder="Ex.: Eletricista"
           placeholderTextColor="#94A3B8"
           autoCapitalize="words"
+          value={rascunho.profissao}
+          onChangeText={(valor) => atualizarCampo("profissao", valor)}
         />
 
-        {/* Seleção de categoria */}
         <Text style={styles.rotulo}>Categoria *</Text>
 
         <Pressable
@@ -98,10 +250,10 @@ export default function CadastroProfissional() {
           <Text
             style={[
               styles.textoSeletor,
-              !categoria && styles.placeholder,
+              !rascunho.categoria && styles.placeholder,
             ]}
           >
-            {categoria || "Selecione uma categoria"}
+            {rascunho.categoria || "Selecione uma categoria"}
           </Text>
 
           <Text style={styles.setaSeletor}>
@@ -116,14 +268,14 @@ export default function CadastroProfissional() {
                 key={item}
                 style={styles.opcaoCategoria}
                 onPress={() => {
-                  setCategoria(item);
+                  atualizarCampo("categoria", item);
                   setMostrarCategorias(false);
                 }}
               >
                 <Text
                   style={[
                     styles.textoOpcao,
-                    categoria === item && styles.opcaoSelecionada,
+                    rascunho.categoria === item && styles.opcaoSelecionada,
                   ]}
                 >
                   {item}
@@ -139,6 +291,8 @@ export default function CadastroProfissional() {
           placeholder="Digite a cidade"
           placeholderTextColor="#94A3B8"
           autoCapitalize="words"
+          value={rascunho.cidade}
+          onChangeText={(valor) => atualizarCampo("cidade", valor)}
         />
 
         <Text style={styles.rotulo}>Descrição dos serviços</Text>
@@ -148,10 +302,11 @@ export default function CadastroProfissional() {
           placeholderTextColor="#94A3B8"
           multiline
           textAlignVertical="top"
+          value={rascunho.descricaoServicos}
+          onChangeText={(valor) => atualizarCampo("descricaoServicos", valor)}
         />
       </View>
 
-      {/* Status */}
       <View style={styles.cartao}>
         <Text style={styles.tituloSecao}>Status do profissional</Text>
         <Text style={styles.textoAjuda}>
@@ -159,19 +314,19 @@ export default function CadastroProfissional() {
         </Text>
 
         <View style={styles.opcoesStatus}>
-          {["Ativo", "Inativo"].map((opcao) => (
+          {opcoesStatus.map((opcao) => (
             <Pressable
               key={opcao}
               style={[
                 styles.botaoStatus,
-                status === opcao && styles.botaoStatusSelecionado,
+                rascunho.status === opcao && styles.botaoStatusSelecionado,
               ]}
-              onPress={() => setStatus(opcao)}
+              onPress={() => atualizarCampo("status", opcao)}
             >
               <Text
                 style={[
                   styles.textoStatus,
-                  status === opcao && styles.textoStatusSelecionado,
+                  rascunho.status === opcao && styles.textoStatusSelecionado,
                 ]}
               >
                 {opcao}
@@ -181,26 +336,18 @@ export default function CadastroProfissional() {
         </View>
       </View>
 
-      {/* Ações */}
       <View style={styles.acoes}>
         <Pressable
-          style={styles.botaoCadastrar}
-          onPress={() =>
-            Alert.alert(
-              "Cadastro não implementado",
-              "A interface está pronta para a próxima etapa. Os dados ainda não são salvos."
-            )
-          }
+          style={[styles.botaoCadastrar, salvando && styles.botaoDesabilitado]}
+          onPress={() => void cadastrarProfissional()}
+          disabled={salvando || !rascunhoCarregado}
         >
           <Text style={styles.textoBotaoCadastrar}>
-            Cadastrar profissional
+            {salvando ? "Salvando..." : "Cadastrar profissional"}
           </Text>
         </Pressable>
 
-        <Pressable
-          style={styles.botaoCancelar}
-          onPress={() => router.back()}
-        >
+        <Pressable style={styles.botaoCancelar} onPress={() => router.back()}>
           <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
         </Pressable>
       </View>
@@ -363,6 +510,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 17,
     alignItems: "center",
+  },
+  botaoDesabilitado: {
+    opacity: 0.6,
   },
   textoBotaoCadastrar: {
     color: "#FFFFFF",

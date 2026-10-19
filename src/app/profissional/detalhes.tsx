@@ -1,9 +1,67 @@
-import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import type { Profissional } from "@/types/Profissional";
+import { apagarProfissional, carregarProfissionais } from "@/utils/profissionaisStorage";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DetalhesProfissional() {
   const insets = useSafeAreaInsets();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const idProfissional = Array.isArray(id) ? id[0] : id;
+  const [resultado, setResultado] = useState<
+    | { id: string; profissional: Profissional | null }
+    | { id: string; erro: true }
+    | null
+  >(null);
+  const resultadoAtual = resultado?.id === idProfissional ? resultado : null;
+  const carregando = Boolean(idProfissional) && resultadoAtual === null;
+  const falhaAoCarregar = resultadoAtual !== null && "erro" in resultadoAtual;
+  const profissional =
+    resultadoAtual !== null && "profissional" in resultadoAtual
+      ? resultadoAtual.profissional
+      : null;
+
+  useEffect(() => {
+    let ativo = true;
+
+    if (!idProfissional) {
+      return () => {
+        ativo = false;
+      };
+    }
+
+    void carregarProfissionais()
+      .then((lista) => {
+        if (ativo) {
+          setResultado({
+            id: idProfissional,
+            profissional:
+              lista.find((item) => String(item.id) === idProfissional) ?? null,
+          });
+        }
+      })
+      .catch((erro: unknown) => {
+        console.error(
+          "Não foi possível carregar os dados do profissional.",
+          erro,
+        );
+        if (ativo) {
+          setResultado({ id: idProfissional, erro: true });
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [idProfissional]);
 
   return (
     <ScrollView
@@ -13,100 +71,120 @@ export default function DetalhesProfissional() {
     >
       {/* Cabeçalho */}
       <View style={styles.cabecalho}>
-        <Pressable
-          style={styles.botaoVoltar}
-          onPress={() => router.back()}
-        >
+        <Pressable style={styles.botaoVoltar} onPress={() => router.back()}>
           <Text style={styles.setaVoltar}>‹</Text>
         </Pressable>
 
         <Text style={styles.tituloCabecalho}>Detalhes do profissional</Text>
       </View>
 
-      {/* Apresentação do profissional */}
-      <View style={styles.cartaoPerfil}>
-        <View style={styles.avatar}>
-          <Text style={styles.letraAvatar}>J</Text>
+      {carregando ? (
+        <View style={styles.estadoVazio}>
+          <ActivityIndicator color="#2563EB" />
+          <Text style={styles.descricao}>
+            Carregando dados do profissional...
+          </Text>
         </View>
-
-        <Text style={styles.nomeProfissional}>João da Silva</Text>
-        <Text style={styles.profissao}>Eletricista</Text>
-
-        <View style={styles.status}>
-          <View style={styles.pontoStatus} />
-          <Text style={styles.textoStatus}>Ativo</Text>
+      ) : falhaAoCarregar ? (
+        <View style={styles.estadoVazio}>
+          <Text style={styles.nomeProfissional}>Não foi possível carregar</Text>
+          <Text style={styles.descricao}>
+            Ocorreu um erro ao acessar os dados. Tente novamente.
+          </Text>
+          <Pressable style={styles.botaoEditar} onPress={() => router.back()}>
+            <Text style={styles.textoBotaoEditar}>Voltar para a lista</Text>
+          </Pressable>
         </View>
-      </View>
+      ) : profissional ? (
+        <>
+          <View style={styles.cartaoPerfil}>
+            <View style={styles.avatar}>
+              <Text style={styles.letraAvatar}>
+                {profissional.nome.trim().charAt(0).toLocaleUpperCase()}
+              </Text>
+            </View>
 
-      {/* Informações do profissional */}
-      <Text style={styles.tituloSecao}>Informações</Text>
+            <Text style={styles.nomeProfissional}>{profissional.nome}</Text>
+            <Text style={styles.profissao}>{profissional.profissao}</Text>
+            <Text style={styles.categoria}>{profissional.categoria}</Text>
+          </View>
 
-      <View style={styles.cartaoInformacoes}>
-        <View style={styles.itemInformacao}>
-          <View style={styles.icone}>
-            <Text style={styles.simboloIcone}>☎</Text>
+          <Text style={styles.tituloSecao}>Informações</Text>
+
+          <View style={styles.cartaoInformacoes}>
+            <View style={styles.itemInformacao}>
+              <View style={styles.icone}>
+                <Text style={styles.simboloIcone}>☎</Text>
+              </View>
+              <View style={styles.dadosInformacao}>
+                <Text style={styles.rotulo}>Telefone</Text>
+                <Text style={styles.valor}>
+                  {profissional.telefone || "Não informado"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.divisor} />
+
+            <View style={styles.itemInformacao}>
+              <View style={styles.icone}>
+                <Text style={styles.simboloIcone}>⌖</Text>
+              </View>
+              <View style={styles.dadosInformacao}>
+                <Text style={styles.rotulo}>Cidade</Text>
+                <Text style={styles.valor}>{profissional.localizacao}</Text>
+              </View>
+            </View>
+
+            <View style={styles.divisor} />
+
+            <View style={styles.itemInformacao}>
+              <View style={styles.icone}>
+                <Text style={styles.simboloIcone}>◇</Text>
+              </View>
+              <View style={styles.dadosInformacao}>
+                <Text style={styles.rotulo}>Categoria</Text>
+                <Text style={styles.valor}>{profissional.categoria}</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.dadosInformacao}>
-            <Text style={styles.rotulo}>Telefone</Text>
-            <Text style={styles.valor}>(83) 99999-9999</Text>
+
+          <Text style={styles.tituloSecao}>Sobre o profissional</Text>
+
+          <View style={styles.cartaoDescricao}>
+            <Text style={styles.descricao}>
+              {profissional.descricao || "Descrição não informada."}
+            </Text>
           </View>
+
+          <View style={styles.acoes}>
+            <Pressable style={styles.botaoEditar}   onPress={() =>
+    router.push({
+      pathname: "/profissional/editar",
+      params: { id: profissional.id },
+    })
+  }>
+              <Text style={styles.textoBotaoEditar}>Editar profissional</Text>
+            </Pressable>
+
+            <Pressable style={styles.botaoExcluir} onPress={() => apagarProfissional(profissional)}>
+              <Text style={styles.textoBotaoExcluir}>Excluir profissional</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <View style={styles.estadoVazio}>
+          <Text style={styles.nomeProfissional}>
+            Profissional não encontrado
+          </Text>
+          <Text style={styles.descricao}>
+            Não foi possível localizar os dados deste profissional.
+          </Text>
+          <Pressable style={styles.botaoEditar} onPress={() => router.back()}>
+            <Text style={styles.textoBotaoEditar}>Voltar para a lista</Text>
+          </Pressable>
         </View>
-
-        <View style={styles.divisor} />
-
-        <View style={styles.itemInformacao}>
-          <View style={styles.icone}>
-            <Text style={styles.simboloIcone}>⌖</Text>
-          </View>
-          <View style={styles.dadosInformacao}>
-            <Text style={styles.rotulo}>Cidade</Text>
-            <Text style={styles.valor}>Esperança - PB</Text>
-          </View>
-        </View>
-
-        <View style={styles.divisor} />
-
-        <View style={styles.itemInformacao}>
-          <View style={styles.icone}>
-            <Text style={styles.simboloIcone}>◇</Text>
-          </View>
-          <View style={styles.dadosInformacao}>
-            <Text style={styles.rotulo}>Categoria</Text>
-            <Text style={styles.valor}>Serviços residenciais</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Descrição */}
-      <Text style={styles.tituloSecao}>Sobre o profissional</Text>
-
-      <View style={styles.cartaoDescricao}>
-        <Text style={styles.descricao}>
-          Serviços de instalação e manutenção elétrica residencial, com
-          atendimento para diferentes necessidades.
-        </Text>
-      </View>
-
-      {/* Ações interativas */}
-      <View style={styles.acoes}>
-        <Pressable
-          style={styles.botaoEditar}
-          onPress={() => {
-            /* ação de editar */
-          }}
-        >
-          <Text style={styles.textoBotaoEditar}>Editar profissional</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.botaoExcluir}
-          onPress={() => {
-            /* ação de excluir */
-          }}
-        >
-          <Text style={styles.textoBotaoExcluir}>Excluir profissional</Text>
-        </Pressable>
-      </View>
+      )}
     </ScrollView>
   );
 }
@@ -177,26 +255,16 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginTop: 6,
   },
-  status: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#DCFCE7",
+  categoria: {
+    backgroundColor: "#DBEAFE",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     marginTop: 14,
-  },
-  pontoStatus: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: "#16A34A",
-    marginRight: 7,
-  },
-  textoStatus: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#166534",
+    color: "#1D4ED8",
+    overflow: "hidden",
   },
   tituloSecao: {
     fontSize: 18,
@@ -259,6 +327,12 @@ const styles = StyleSheet.create({
   acoes: {
     marginTop: 4,
     gap: 12,
+  },
+  estadoVazio: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    gap: 14,
   },
   botaoEditar: {
     backgroundColor: "#2563EB",

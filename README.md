@@ -41,13 +41,7 @@ npm start
 ### Como Contribuir
 Mantemos um fluxo de trabalho rigoroso para garantir a qualidade do código e do histórico.
 
-#### 1. Execute o comando abaixo na raiz do projeto para baixar as garantias de qualidade
-
-```
-pnpm install
-```
-
-#### 2. Convenção de Branches
+#### 1. Convenção de Branches
 Siga o padrão: `tipo/numero-issue-descricao-curta`.
 * `feat/`: Novas funcionalidades.
 * `fix/`: Correção de bugs.
@@ -62,6 +56,6 @@ Siga o padrão: `tipo/numero-issue-descricao-curta`.
 * `cleanup/`: Remoção de códigos comentados ou trechos desnecessários.
 * `remove/`: Exclusão de arquivos, diretórios ou funcionalidades obsoletas.
   
-#### 3. Pull Requests (PRs)
+#### 2. Pull Requests (PRs)
 - PRs para as branches `main` e `dev` exigem aprovação e não permitem *force push*.
 

@@ -27,12 +27,18 @@ git clone https://github.com/arcanjo-devbr/Achae.git
 cd Achae
 ```
 
-3. Instale as dependências [com pnpm]
+3. Instale a versão 9 do pnpm globalmente;
+
+```
+npm i -g pnpm@9
+```
+
+4. Instale as dependências [com pnpm]
 
 ```
 pnpm install
 ```
-4. Execute o projeto
+5. Execute o projeto
 ```
 npm start
 ```

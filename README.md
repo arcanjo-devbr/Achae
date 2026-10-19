@@ -1,4 +1,4 @@
-## Descrição ##
+## Descrição 
 
 O achaê corresponde a um aplicativo mobile, desenvolvido para usuários consultarem e visualizarem as principais informações (nome, serviço ofertado, categoria do serviço e localização) dos profissionais cadastrados por categoria de serviço ofertado. 
 
@@ -11,6 +11,31 @@ O achaê corresponde a um aplicativo mobile, desenvolvido para usuários consult
 ### Informações Técnicas
 
 A aplicação é desenvolvida em React Native com Typescript. Os dados são armazenados localmente no dispositivo utilizando o banco de dados local com a funcionalidade AsyncStorage do React Native. 
+
+### Execução do Projeto
+
+Para executar o projeto com sucesso, siga as seguintes instruções em ordem:
+
+1. Clone o projeto;
+
+```
+git clone https://github.com/arcanjo-devbr/Achae.git
+```
+   
+2. Entre na pasta Achaê;
+```
+cd Achae
+```
+
+3. Instale as dependências [com pnpm]
+
+```
+pnpm install
+```
+4. Execute o projeto
+```
+npm start
+```
 
 
 ### Como Contribuir

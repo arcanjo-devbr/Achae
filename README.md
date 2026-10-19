@@ -1,18 +1,17 @@
-### Descrição ###
+## Descrição ##
 
-O Achaê será desenvolvido, para esta disciplina, como um aplicativo mobile educacional destinado ao cadastro e consulta de profissionais e serviços de uma determinada região.
+O achaê corresponde a um aplicativo mobile, desenvolvido para usuários consultarem e visualizarem as principais informações (nome, serviço ofertado, categoria do serviço e localização) dos profissionais cadastrados por categoria de serviço ofertado. 
 
-A ideia central é permitir que o usuário encontre profissionais cadastrados por categoria de serviço e visualize suas principais informações. Os dados serão armazenados localmente no dispositivo utilizando um banco de dados local.
+### A aplicação possibilita o seguinte:
 
---- 
+- os usuários visitantes encontrarem profissionais especializados em serviços dos quais necessitam;
+- os usuários profissionais serem procurados para prestarem trabalho na área em que são cadastrados;
+- os usuários administradores cadastrarem e gerenciarem os profissionais cadastrados;
 
-### Documentação Completa ###
+### Informações Técnicas
 
+A aplicação é desenvolvida em React Native com Typescript. Os dados são armazenados localmente no dispositivo utilizando o banco de dados local com a funcionalidade AsyncStorage do React Native. 
 
-[Baixar Documentação Completa](https://docs.google.com/document/d/1_U8aA74eZM2WyLeet7y7P1_ehIglw4e0nK3u6wLXLQI/export?format=pdf)
-
-
----
 
 ### Como Contribuir
 Mantemos um fluxo de trabalho rigoroso para garantir a qualidade do código e do histórico.

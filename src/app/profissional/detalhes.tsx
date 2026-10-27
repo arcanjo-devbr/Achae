@@ -14,54 +14,32 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DetalhesProfissional() {
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id?: string }>();
-  const idProfissional = Array.isArray(id) ? id[0] : id;
-  const [resultado, setResultado] = useState<
-    | { id: string; profissional: Profissional | null }
-    | { id: string; erro: true }
-    | null
-  >(null);
-  const resultadoAtual = resultado?.id === idProfissional ? resultado : null;
-  const carregando = Boolean(idProfissional) && resultadoAtual === null;
-  const falhaAoCarregar = resultadoAtual !== null && "erro" in resultadoAtual;
-  const profissional =
-    resultadoAtual !== null && "profissional" in resultadoAtual
-      ? resultadoAtual.profissional
-      : null;
+ 
+  const params = useLocalSearchParams<{
+      id: string,
+      nome: string,
+      profissao: string;
+      categoria: string;
+      localizacao: string;
+      imagem?: string;
+      status: "Ativo" | "Inativo";
+      telefone?: string;
+      descricao?: string;
+  }>();
+ 
+  const profissional: Profissional = {
+    id: Number(params.id),
+    nome: params.nome,
+    profissao: params.profissao,
+    categoria: params.categoria,
+    localizacao: params.localizacao,
+    imagem: params.imagem ?? null,
+    status: params.status,
+    telefone: params.telefone,
+    descricao: params.descricao,
+  };
 
-  useEffect(() => {
-    let ativo = true;
-
-    if (!idProfissional) {
-      return () => {
-        ativo = false;
-      };
-    }
-
-    void carregarProfissionais()
-      .then((lista) => {
-        if (ativo) {
-          setResultado({
-            id: idProfissional,
-            profissional:
-              lista.find((item) => String(item.id) === idProfissional) ?? null,
-          });
-        }
-      })
-      .catch((erro: unknown) => {
-        console.error(
-          "Não foi possível carregar os dados do profissional.",
-          erro,
-        );
-        if (ativo) {
-          setResultado({ id: idProfissional, erro: true });
-        }
-      });
-
-    return () => {
-      ativo = false;
-    };
-  }, [idProfissional]);
+  
 
   return (
     <ScrollView
@@ -69,7 +47,6 @@ export default function DetalhesProfissional() {
       contentContainerStyle={[styles.conteudo, { paddingTop: insets.top + 10 }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Cabeçalho */}
       <View style={styles.cabecalho}>
         <Pressable style={styles.botaoVoltar} onPress={() => router.back()}>
           <Text style={styles.setaVoltar}>‹</Text>
@@ -78,24 +55,7 @@ export default function DetalhesProfissional() {
         <Text style={styles.tituloCabecalho}>Detalhes do profissional</Text>
       </View>
 
-      {carregando ? (
-        <View style={styles.estadoVazio}>
-          <ActivityIndicator color="#2563EB" />
-          <Text style={styles.descricao}>
-            Carregando dados do profissional...
-          </Text>
-        </View>
-      ) : falhaAoCarregar ? (
-        <View style={styles.estadoVazio}>
-          <Text style={styles.nomeProfissional}>Não foi possível carregar</Text>
-          <Text style={styles.descricao}>
-            Ocorreu um erro ao acessar os dados. Tente novamente.
-          </Text>
-          <Pressable style={styles.botaoEditar} onPress={() => router.back()}>
-            <Text style={styles.textoBotaoEditar}>Voltar para a lista</Text>
-          </Pressable>
-        </View>
-      ) : profissional ? (
+      {profissional ? (
         <>
           <View style={styles.cartaoPerfil}>
             <View style={styles.avatar}>

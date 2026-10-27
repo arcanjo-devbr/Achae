@@ -12,6 +12,15 @@ O achaê corresponde a um aplicativo mobile, desenvolvido para usuários consult
 
 A aplicação é desenvolvida em React Native com Typescript. Os dados são armazenados localmente no dispositivo utilizando o banco de dados local com a funcionalidade AsyncStorage do React Native. 
 
+
+### Documentação Detalhada
+
+[Documentacao.pdf](https://github.com/user-attachments/files/34015045/Documentacao.pdf)
+
+### Vídeo Instrucional
+
+https://github.com/user-attachments/assets/86398825-75d3-49c6-b75f-22cc56fcf09c
+
 ### Execução do Projeto
 
 Para executar o projeto com sucesso, siga as seguintes instruções em ordem:

@@ -166,7 +166,7 @@ export default function Index() {
             selecionarServico={() =>
               router.push({
                 pathname: "/profissional/detalhes",
-                params: { id: item.id.toString() },
+                params: { ...item },
               })
             }
           />

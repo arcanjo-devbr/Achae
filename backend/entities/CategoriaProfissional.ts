@@ -9,6 +9,9 @@ export class CategoriaProfissional {
   @Column({ type: "varchar", unique: true })
   readonly nome!: string;
 
+  @Column({ type: "varchar" })
+  readonly categoria!: string;
+
   @OneToMany(
     () => Profissao,
     (profissao) => profissao.categoriaProfissional,

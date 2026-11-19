@@ -13,8 +13,8 @@ export class UsuarioRepository implements IUsuarioRepository {
     return this.repository.findOneBy({ identificador });
   }
 
-  buscarPorNome(nome: string): Promise<Usuario[]> {
-    return this.repository.find({
+  buscarPorNome(nome: string): Promise<Usuario | null> {
+    return this.repository.findOne({
       where: { nome: ILike(`%${nome}%`) },
     });
   }

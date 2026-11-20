@@ -1,4 +1,4 @@
-import { UsuarioTrabalha } from "../entities/UsuarioTrabalha";
+import { UsuarioTrabalhaMapper } from "../mapper/UsuarioTrabalhaMapper";
 import { IUsuarioTrabalhaRepository } from "../repository";
 import {
   IUsuarioTrabalhaService,
@@ -8,12 +8,13 @@ import {
 export class UsuarioTrabalhaServiceImpl implements IUsuarioTrabalhaService {
   constructor(
     private readonly usuarioTrabalhaRepository: IUsuarioTrabalhaRepository,
+    private readonly usuarioTrabalhaMapper : UsuarioTrabalhaMapper
   ) {}
 
   async relacionarProfissaoUsuario(
     dados: UsuarioTrabalhaInput,
   ): Promise<void> {
-    const vinculo = Object.assign(new UsuarioTrabalha(), dados);
+    const vinculo = this.usuarioTrabalhaMapper.toEntity(dados);
     await this.usuarioTrabalhaRepository.salvar(vinculo);
   }
 }

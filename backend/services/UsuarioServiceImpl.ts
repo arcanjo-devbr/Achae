@@ -1,5 +1,5 @@
 import { UsuarioRequestDTO, UsuarioResponseDTO } from "../dto";
-import { CategoriaProfissional, Profissao, Usuario } from "../entities";
+import { CategoriaProfissional, Profissao} from "../entities";
 import { ConflictError, HttpError } from "../exceptions/HttpError";
 import { CategoriaProfissionalMapper } from "../mapper/CategoriaProfissionalMapper";
 import { ProfissaoMapper } from "../mapper/ProfissaoMapper";

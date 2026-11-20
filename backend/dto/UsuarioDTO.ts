@@ -2,8 +2,22 @@ export type UsuarioRequestDTO = Readonly<{
   nome: string;
   telefone: string;
   cidade: number;
-  profissao: number;
-  categoria_profissional: number;
+  trabalhos: readonly TrabalhoRequestDTO[];
+}>;
+
+export type TrabalhoRequestDTO = Readonly<{
+  profissao: string;
+  categoria: string;
+  status: boolean;
+  descricao: string;
+}>;
+
+export type TrabalhoResponseDTO = Readonly<{
+  id: string;
+  profissao: string;
+  categoria: string;
+  status: boolean;
+  descricao: string;
 }>;
 
 export type UsuarioResponseDTO = Readonly<{
@@ -11,6 +25,5 @@ export type UsuarioResponseDTO = Readonly<{
   nome: string;
   telefone: string;
   cidade: number;
-  profissao: number;
-  categoria_profissional: number;
+  trabalhos: readonly TrabalhoResponseDTO[];
 }>;

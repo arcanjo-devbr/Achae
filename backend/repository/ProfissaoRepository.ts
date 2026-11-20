@@ -9,6 +9,13 @@ export class ProfissaoRepository implements IProfissaoRepository {
     return this.repository.find();
   }
 
+  buscarPorId(identificador: number): Promise<Profissao | null> {
+    return this.repository.findOne({
+      where: { identificador },
+      relations: { categoriaProfissional: true },
+    });
+  }
+
   buscarPorNome(nome: string): Promise<Profissao | null> {
     return this.repository.findOneBy({
       nome: ILike(`%${nome}%`),

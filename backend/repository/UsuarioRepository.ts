@@ -9,8 +9,31 @@ export class UsuarioRepository implements IUsuarioRepository {
     return this.repository.find();
   }
 
+  buscarTodosComRelacoes(): Promise<Usuario[]> {
+    return this.repository.find({
+      relations: {
+        cidade: true,
+        vinculosProfissionais: {
+          profissao: { categoriaProfissional: true },
+        },
+      },
+    });
+  }
+
   buscarPorId(identificador: string): Promise<Usuario | null> {
     return this.repository.findOneBy({ identificador });
+  }
+
+  buscarPorIdComRelacoes(identificador: string): Promise<Usuario | null> {
+    return this.repository.findOne({
+      where: { identificador },
+      relations: {
+        cidade: true,
+        vinculosProfissionais: {
+          profissao: { categoriaProfissional: true },
+        },
+      },
+    });
   }
 
   buscarPorNome(nome: string): Promise<Usuario | null> {

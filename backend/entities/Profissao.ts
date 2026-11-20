@@ -15,9 +15,6 @@ export class Profissao {
   readonly identificador!: number;
 
   @Column({ type: "varchar", unique: true })
-  readonly nome!: string;
-
-  @Column({ type: "varchar", unique: true })
   readonly especialidade!: string;
 
 

@@ -22,4 +22,8 @@ export class CategoriaProfissionalRepository
       nome: ILike(`%${nome}%`),
     });
   }
+
+  salvar(categoria: CategoriaProfissional): Promise<CategoriaProfissional> {
+    return this.repository.save(categoria);
+  }
 }

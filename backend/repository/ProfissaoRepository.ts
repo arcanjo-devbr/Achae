@@ -33,4 +33,8 @@ export class ProfissaoRepository implements IProfissaoRepository {
       },
     });
   }
+
+  salvar(profissao: Profissao): Promise<Profissao> {
+    return this.repository.save(profissao);
+  }
 }

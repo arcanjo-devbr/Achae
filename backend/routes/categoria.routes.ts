@@ -1,8 +1,10 @@
 import { Router } from "express";
+import { CategoriaController } from "../controllers";
 
 export default class CategoriaRoutes {
   static #instance: CategoriaRoutes | null = null;
   readonly #routes: Router = Router();
+  readonly #categoriaController: CategoriaController;
 
   public static obterInstancia() {
     if (CategoriaRoutes.#instance === null) {
@@ -13,22 +15,13 @@ export default class CategoriaRoutes {
   }
 
   private constructor() {
+    this.#categoriaController = new CategoriaController();
     this.definirRotas();
   }
 
   private definirRotas(): void {
     // GET /categorias-profissionais - Buscar todas as categorias profissionais
-    // TODO: Implementar quando CategoriaProfissionalController estiver disponível
-    // this.#routes.get("/", (req, res, next) => {
-    //   categoriaController.buscarTodasCategorias(req, res);
-    // });
-
-    this.#routes.get("/", (req, res, next) => {
-      // Placeholder - será implementado com CategoriaProfissionalController
-      res.status(501).json({
-        mensagem: "Endpoint não implementado. Aguardando implementação do CategoriaProfissionalController.",
-      });
-    });
+    this.#routes.get("/", this.#categoriaController.buscarCategorias);
   }
 
   public getRoutes(): Router {

@@ -1,8 +1,10 @@
 import { Router } from "express";
+import { CidadeController } from "../controllers";
 
 export default class CidadeRoutes {
   static #instance: CidadeRoutes | null = null;
   readonly #routes: Router = Router();
+  readonly #cidadeController: CidadeController;
 
   public static obterInstancia() {
     if (CidadeRoutes.#instance === null) {
@@ -13,22 +15,13 @@ export default class CidadeRoutes {
   }
 
   private constructor() {
+    this.#cidadeController = new CidadeController();
     this.definirRotas();
   }
 
   private definirRotas(): void {
     // GET /cidades - Buscar todas as cidades
-    // TODO: Implementar quando CidadeController estiver disponível
-    // this.#routes.get("/", (req, res, next) => {
-    //   cidadeController.buscarTodasCidades(req, res);
-    // });
-
-    this.#routes.get("/", (req, res, next) => {
-      // Placeholder - será implementado com CidadeController
-      res.status(501).json({
-        mensagem: "Endpoint não implementado. Aguardando implementação do CidadeController.",
-      });
-    });
+    this.#routes.get("/", this.#cidadeController.buscarCidades);
   }
 
   public getRoutes(): Router {

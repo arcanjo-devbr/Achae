@@ -24,6 +24,10 @@ test("UsuarioRepository delega consultas, persistência e exclusão", async () =
       calls.push(`findOneBy:${JSON.stringify(where)}`);
       return usuario;
     },
+    findOne: async (where: object) => {
+      calls.push("findOne");
+      return usuario;
+    },
     save: async (value: Usuario) => {
       calls.push("save");
       return value;
@@ -38,14 +42,14 @@ test("UsuarioRepository delega consultas, persistência e exclusão", async () =
 
   assert.deepEqual(await service.buscarTodos(), [usuario]);
   assert.equal(await service.buscarPorId("usuario-id"), usuario);
-  assert.deepEqual(await service.buscarPorNome("ana"), [usuario]);
+  assert.equal(await service.buscarPorNome("ana"), usuario);
   assert.equal(await service.salvar(usuario), usuario);
   await service.excluirPorId("usuario-id");
 
   assert.deepEqual(calls, [
     "find",
     'findOneBy:{"identificador":"usuario-id"}',
-    "find",
+    "findOne",
     "save",
     "delete:usuario-id",
   ]);

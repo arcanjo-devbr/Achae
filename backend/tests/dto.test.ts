@@ -10,16 +10,21 @@ test("define o contrato do UsuarioRequestDTO", () => {
     nome: "Maria",
     telefone: "11999999999",
     cidade: 1,
-    profissao: 2,
-    categoria_profissional: 3,
+    trabalhos: [
+      {
+        profissao: "Eletricista",
+        categoria: "Elétrica",
+        status: true,
+        descricao: "Instalações residenciais",
+      },
+    ],
   };
 
   assert.deepEqual(Object.keys(usuario).sort(), [
-    "categoria_profissional",
     "cidade",
     "nome",
-    "profissao",
     "telefone",
+    "trabalhos",
   ]);
 });
 
@@ -29,16 +34,22 @@ test("define o contrato do UsuarioResponseDTO", () => {
     nome: "Maria",
     telefone: "11999999999",
     cidade: 1,
-    profissao: 2,
-    categoria_profissional: 3,
+    trabalhos: [
+      {
+        id: "827f6f7a-f1d2-48bd-bba8-a4f008caf19b",
+        profissao: "Eletricista",
+        categoria: "Elétrica",
+        status: true,
+        descricao: "Instalações residenciais",
+      },
+    ],
   };
 
   assert.deepEqual(Object.keys(usuario).sort(), [
-    "categoria_profissional",
     "cidade",
     "id",
     "nome",
-    "profissao",
     "telefone",
+    "trabalhos",
   ]);
 });

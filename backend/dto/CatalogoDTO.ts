@@ -1,17 +1,24 @@
-export type CidadesResponseDTO = Readonly<{
+ type CidadeResponseDTO = Readonly<{
   id: number;
   nome: string;
 }>;
 
-export type CategoriaResponseDTO = Readonly<{
+ type CategoriaResponseDTO = Readonly<{
   id: number;
   nome: string;
   categoria: string;
 }>;
 
-export type ProfissoesResponseDTO = Readonly<{
+ type ProfissaoResponseDTO = Readonly<{
   id: number;
   nome: string;
   especialidade: string;
   categoria_profissional: number;
 }>;
+
+
+export type CidadesResponseDTO = CidadeResponseDTO[];
+
+export type CategoriasRespondeDTO = CategoriaResponseDTO[];
+
+export type ProfissoesResponseDTO = ProfissaoResponseDTO[];

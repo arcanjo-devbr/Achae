@@ -7,6 +7,6 @@ const instanciaTypeOrm = TypeOrm.obterInstancia();
 
 
 export {
-    instanciaTypeOrm,
+    instanciaTypeOrm
 }
 

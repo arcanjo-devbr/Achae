@@ -1,4 +1,6 @@
 import { DataSource } from "typeorm";
+import { ENTITY_CLASSES } from "../entities";
+import { ReadOnlyEntitySubscriber } from "../entities/ReadOnlyEntitySubscriber";
 
 export default class TypeOrm {
     static #InstanceTypeOrm : TypeOrm | null = null;
@@ -9,7 +11,8 @@ export default class TypeOrm {
             type: "postgres",
             synchronize: false,
             url: process.env.DATABASE_URL,
-            //entities: ,
+            entities: [...ENTITY_CLASSES],
+            subscribers: [ReadOnlyEntitySubscriber],
             //migrations: 
         });
     }

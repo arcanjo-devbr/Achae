@@ -23,6 +23,23 @@ https://github.com/user-attachments/assets/86398825-75d3-49c6-b75f-22cc56fcf09c
 
 ### Execução do Projeto
 
+#### Configuração da API
+
+Configure a URL pública do backend em um arquivo `.env` do frontend:
+
+```text
+EXPO_PUBLIC_API_URL=http://<HOST_OU_IP_DA_REDE>:3000/api
+```
+
+O valor deve incluir protocolo, host, porta e o prefixo `/api` do backend.
+Exemplos:
+
+- Emulador Android: `http://10.0.2.2:3000/api`
+- Dispositivo físico: `http://IP_DA_MAQUINA_NA_REDE_LOCAL:3000/api`
+- Web local: `http://localhost:3000/api`
+
+Não informe credenciais ou dados sensíveis em `EXPO_PUBLIC_API_URL`.
+
 Para executar o projeto com sucesso, siga as seguintes instruções em ordem:
 
 1. Clone o projeto;

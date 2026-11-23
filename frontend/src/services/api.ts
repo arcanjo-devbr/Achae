@@ -1,7 +1,6 @@
 import {
   AxiosHeaders,
   create,
-  isCancel,
   type AxiosError,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
@@ -114,14 +113,17 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (erro: ApiError) => {
-    if (isCancel(erro)) {
-      erro.tipoErro = "cancellation";
-      erro.isConnectionError = false;
-      erro.mensagem = "A requisicao foi cancelada.";
-    } else if (erro.response) {
-      erro.tipoErro = "http";
-      const dados = erro.response.data;
+  (erro: unknown) => {
+    const axiosError = erro as ApiError;
+
+    if ("__CANCEL__" in axiosError && axiosError.__CANCEL__) {
+      const cancelamento = axiosError as ApiError;
+      cancelamento.tipoErro = "cancellation";
+      cancelamento.isConnectionError = false;
+      cancelamento.mensagem = "A requisicao foi cancelada.";
+    } else if (axiosError.response) {
+      axiosError.tipoErro = "http";
+      const dados = axiosError.response.data;
 
       if (
         typeof dados === "object" &&
@@ -129,22 +131,25 @@ api.interceptors.response.use(
         "mensagem" in dados &&
         typeof dados.mensagem === "string"
       ) {
-        erro.mensagem = dados.mensagem;
-        erro.message = dados.mensagem;
+        axiosError.mensagem = dados.mensagem;
+        axiosError.message = dados.mensagem;
       }
 
-      erro.isConnectionError = false;
-    } else if (erro.code === "ECONNABORTED" || erro.code === "ETIMEDOUT") {
-      erro.tipoErro = "timeout";
-      erro.isConnectionError = true;
-      erro.mensagem = "A requisicao excedeu o tempo limite.";
+      axiosError.isConnectionError = false;
+    } else if (
+      axiosError.code === "ECONNABORTED" ||
+      axiosError.code === "ETIMEDOUT"
+    ) {
+      axiosError.tipoErro = "timeout";
+      axiosError.isConnectionError = true;
+      axiosError.mensagem = "A requisicao excedeu o tempo limite.";
     } else {
-      erro.tipoErro = "connection";
-      erro.isConnectionError = true;
-      erro.mensagem = "Nao foi possivel conectar ao servidor.";
+      axiosError.tipoErro = "connection";
+      axiosError.isConnectionError = true;
+      axiosError.mensagem = "Nao foi possivel conectar ao servidor.";
     }
 
-    return Promise.reject(erro);
+    return Promise.reject(axiosError);
   },
 );
 

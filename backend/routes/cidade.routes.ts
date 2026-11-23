@@ -6,22 +6,22 @@ export default class CidadeRoutes {
   readonly #routes: Router = Router();
   readonly #cidadeController: CidadeController;
 
-  public static obterInstancia() {
+  public static obterInstancia(cidadeController: CidadeController) {
     if (CidadeRoutes.#instance === null) {
-      CidadeRoutes.#instance = new CidadeRoutes();
+      CidadeRoutes.#instance = new CidadeRoutes(cidadeController);
     }
 
     return CidadeRoutes.#instance;
   }
 
-  private constructor() {
-    this.#cidadeController = new CidadeController();
+  private constructor(cidadeController: CidadeController) {
+    this.#cidadeController = cidadeController;
     this.definirRotas();
   }
 
   private definirRotas(): void {
     // GET /cidades - Buscar todas as cidades
-    this.#routes.get("/", this.#cidadeController.buscarCidades);
+    this.#routes.get("/buscarTodos", this.#cidadeController.buscarCidades);
   }
 
   public getRoutes(): Router {

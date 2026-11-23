@@ -6,22 +6,22 @@ export default class ProfissaoRoutes {
   readonly #routes: Router = Router();
   readonly #profissaoController: ProfissaoController;
 
-  public static obterInstancia() {
+  public static obterInstancia(profissaoController : ProfissaoController) {
     if (ProfissaoRoutes.#instance === null) {
-      ProfissaoRoutes.#instance = new ProfissaoRoutes();
+      ProfissaoRoutes.#instance = new ProfissaoRoutes(profissaoController);
     }
 
     return ProfissaoRoutes.#instance;
   }
 
-  private constructor() {
-    this.#profissaoController = new ProfissaoController();
+  private constructor(profissaoController : ProfissaoController) {
+    this.#profissaoController = profissaoController;
     this.definirRotas();
   }
 
   private definirRotas(): void {
     // GET /profissoes?categoriaId=id - Buscar profissões por categoria
-    this.#routes.get("/", this.#profissaoController.buscarProfissoes);
+    this.#routes.get("/buscarPorCategoria", this.#profissaoController.buscarProfissoes);
   }
 
   public getRoutes(): Router {

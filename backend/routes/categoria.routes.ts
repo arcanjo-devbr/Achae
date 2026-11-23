@@ -6,22 +6,22 @@ export default class CategoriaRoutes {
   readonly #routes: Router = Router();
   readonly #categoriaController: CategoriaController;
 
-  public static obterInstancia() {
+  public static obterInstancia(categoriaController: CategoriaController) {
     if (CategoriaRoutes.#instance === null) {
-      CategoriaRoutes.#instance = new CategoriaRoutes();
+      CategoriaRoutes.#instance = new CategoriaRoutes(categoriaController);
     }
 
     return CategoriaRoutes.#instance;
   }
 
-  private constructor() {
-    this.#categoriaController = new CategoriaController();
+  private constructor(categoriaController: CategoriaController) {
+    this.#categoriaController = categoriaController;
     this.definirRotas();
   }
 
   private definirRotas(): void {
     // GET /categorias-profissionais - Buscar todas as categorias profissionais
-    this.#routes.get("/", this.#categoriaController.buscarCategorias);
+    this.#routes.get("/buscarTodos", this.#categoriaController.buscarCategorias);
   }
 
   public getRoutes(): Router {

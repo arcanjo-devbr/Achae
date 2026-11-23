@@ -4,27 +4,28 @@ import { UsuarioController } from "../controllers";
 export default class UsuarioRoutes {
   static #instance: UsuarioRoutes | null = null;
   readonly #routes: Router = Router();
-  readonly #usuarioController: UsuarioController;
+  readonly #usuarioController : UsuarioController; 
+ 
 
-  public static obterInstancia() {
+  public static obterInstancia(usuarioController : UsuarioController) {
     if (UsuarioRoutes.#instance === null) {
-      UsuarioRoutes.#instance = new UsuarioRoutes();
+      UsuarioRoutes.#instance = new UsuarioRoutes(usuarioController);
     }
 
     return UsuarioRoutes.#instance;
   }
 
-  private constructor() {
-    this.#usuarioController = new UsuarioController();
+  private constructor(usuarioController : UsuarioController) {
+    this.#usuarioController = usuarioController;
     this.definirRotas();
   }
 
   private definirRotas(): void {
     // POST /usuarios - Criar usuário
-    this.#routes.post("/", this.#usuarioController.criarUsuario);
+    this.#routes.post("/criar", this.#usuarioController.criarUsuario);
 
     // GET /usuarios - Buscar todos os usuários
-    this.#routes.get("/", this.#usuarioController.buscarUsuarios);
+    this.#routes.get("/buscarTodos", this.#usuarioController.buscarUsuarios);
   }
 
   public getRoutes(): Router {

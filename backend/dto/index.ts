@@ -1,5 +1,5 @@
 export type {
-  CategoriaResponseDTO,
+  CategoriasRespondeDTO,
   CidadesResponseDTO,
   ProfissoesResponseDTO,
 } from "./CatalogoDTO";

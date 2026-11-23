@@ -15,7 +15,5 @@ export const ENTITY_CLASSES = [
 ] as const;
 
 export const READ_ONLY_ENTITY_CLASSES = [
-  Cidade,
-  Profissao,
-  CategoriaProfissional,
+  Cidade
 ] as const;

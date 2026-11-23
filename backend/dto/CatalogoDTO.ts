@@ -6,13 +6,11 @@
  type CategoriaResponseDTO = Readonly<{
   id: number;
   nome: string;
-  categoria: string;
 }>;
 
  type ProfissaoResponseDTO = Readonly<{
   id: number;
   nome: string;
-  especialidade: string;
   categoria_profissional: number;
 }>;
 

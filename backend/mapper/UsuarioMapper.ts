@@ -40,8 +40,8 @@ export class UsuarioMapper extends AbstractMapper<
 
         return {
           id: vinculo.identificador,
-          profissao: profissao.especialidade,
-          categoria: categoria.categoria,
+          profissao: profissao.nome,
+          categoria: categoria.nome,
           status: vinculo.status,
           descricao: vinculo.descricao,
         };

@@ -1,20 +1,25 @@
 import { DataSource } from "typeorm";
 import { ENTITY_CLASSES } from "../entities";
 import { ReadOnlyEntitySubscriber } from "../entities/ReadOnlyEntitySubscriber";
+import Env from "./Env";
+
+Env.obterInstancia();
+
+export const appDataSource = new DataSource({
+    type: "postgres",
+    synchronize: false,
+    url: process.env.DATABASE_URL,
+    entities: [...ENTITY_CLASSES],
+    subscribers: [ReadOnlyEntitySubscriber],
+    migrations: ["config/migrations/*.ts"]
+});
 
 export default class TypeOrm {
     static #InstanceTypeOrm : TypeOrm | null = null;
     readonly #dataSource : DataSource;
 
     private constructor(){
-        this.#dataSource = new DataSource({
-            type: "postgres",
-            synchronize: false,
-            url: process.env.DATABASE_URL,
-            entities: [...ENTITY_CLASSES],
-            subscribers: [ReadOnlyEntitySubscriber],
-            //migrations: 
-        });
+        this.#dataSource = appDataSource;
     }
 
     static obterInstancia() : TypeOrm {

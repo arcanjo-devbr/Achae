@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import type { CategoriaResponseDTO } from "../dto";
+import type { CategoriasRespondeDTO } from "../dto";
 import { ICategoriaService } from "../services/ICategoriaService";
 import { responderErroController } from "./HttpControllerResponse";
 import { ICategoriaController } from "./ICategoriaController";
@@ -14,11 +14,10 @@ export class CategoriaController implements ICategoriaController {
     try {
       const categorias =
         await this.categoriaService.buscarTodasCategorias();
-      const categoriasDTO: CategoriaResponseDTO[] = categorias.map(
-        ({ identificador, nome, categoria }) => ({
+      const categoriasDTO: CategoriasRespondeDTO = categorias.map(
+        ({ identificador, nome }) => ({
           id: identificador,
-          nome,
-          categoria,
+          nome
         }),
       );
 

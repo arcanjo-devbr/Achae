@@ -10,7 +10,7 @@ export class CidadeController implements ICidadeController {
   readonly buscarCidades: RequestHandler = async (_requisicao, resposta) => {
     try {
       const cidades = await this.cidadeService.buscarTodasCidades();
-      const cidadesDTO: CidadesResponseDTO[] = cidades.map(
+      const cidadesDTO: CidadesResponseDTO = cidades.map(
         ({ identificador, nome }) => ({
           id: identificador,
           nome,

@@ -17,10 +17,6 @@ export class Profissao {
   @Column({ type: "varchar", unique: true })
   readonly nome!: string;
 
-  @Column({ type: "varchar", unique: true })
-  readonly especialidade!: string;
-
-
   @ManyToOne(
     () => CategoriaProfissional,
     (categoriaProfissional) => categoriaProfissional.profissoes,

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { ValorStringPresenteAusente } from "./types/ValorStringPresenteAusente";
 import { Environments } from "./const/Environments";
+import { EnvironmentVariablesSchema } from "./environment/EnvironmentVariablesSchema";
 
 export default class Env {
     static #instancia : Env | null = null;
@@ -19,8 +20,21 @@ export default class Env {
         if(!Environments.includes(this.#processEnv as typeof Environments[number])){
             throw new Error(`Ambiente de Execução Inválido ${this.#processEnv}`);
         }
-       this.configure(); 
-       this.#variaveisAmbiente = process.env;
+        this.configure();
+
+        const resultadoValidacao =
+            EnvironmentVariablesSchema.safeParse(process.env);
+        if (!resultadoValidacao.success) {
+            const detalhes = resultadoValidacao.error.issues
+                .map((issue) => {
+                    const campo = issue.path.join(".");
+                    return campo ? `${campo}: ${issue.message}` : issue.message;
+                })
+                .join("; ");
+            throw new Error(`Configuração de ambiente inválida: ${detalhes}`);
+        }
+
+        this.#variaveisAmbiente = process.env;
     }
 
     static obterInstancia () : Env {

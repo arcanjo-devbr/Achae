@@ -36,11 +36,10 @@ export class ProfissaoController implements IProfissaoController {
       const profissoes = await this.profissaoService.buscarPorCategoria(
         identificadorCategoria,
       );
-      const profissoesDTO: ProfissoesResponseDTO[] = profissoes.map(
-        ({ identificador, nome, especialidade }) => ({
+      const profissoesDTO: ProfissoesResponseDTO = profissoes.map(
+        ({ identificador, nome }) => ({
           id: identificador,
           nome,
-          especialidade,
           categoria_profissional: identificadorCategoria,
         }),
       );

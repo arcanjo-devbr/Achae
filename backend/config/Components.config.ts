@@ -1,12 +1,14 @@
 import TypeOrm from "./AppDataSource";
 import Env from "./Env";
 
-export const instanciaEnv = Env.obterInstancia();
-const instanciaTypeOrm = TypeOrm.obterInstancia();
 
+
+const instanciaTypeOrm = TypeOrm.obterInstancia();
+const instanciaEnv = Env.obterInstancia();
 
 
 export {
-    instanciaTypeOrm
+    instanciaTypeOrm,
+    instanciaEnv
 }
 

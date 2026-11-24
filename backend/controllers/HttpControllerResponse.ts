@@ -10,6 +10,7 @@ export function responderErroController(
     return;
   }
 
+  console.error("Erro ao processar requisição:", erro);
   resposta.status(500).json({
     mensagem: "Erro interno ao processar a requisição.",
   });

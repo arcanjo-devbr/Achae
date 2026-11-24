@@ -24,8 +24,11 @@ export default class UsuarioRoutes {
     // POST /usuarios - Criar usuário
     this.#routes.post("/criar", this.#usuarioController.criarUsuario);
 
-    // GET /usuarios - Buscar todos os usuários
+    // GET /usuarios/buscarTodos?busca=&categoria=&profissao=
     this.#routes.get("/buscarTodos", this.#usuarioController.buscarUsuarios);
+    this.#routes.get("/:id", this.#usuarioController.buscarUsuarioPorId);
+    this.#routes.put("/:id", this.#usuarioController.editarUsuario);
+    this.#routes.delete("/:id", this.#usuarioController.excluirUsuario);
   }
 
   public getRoutes(): Router {

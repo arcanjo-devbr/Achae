@@ -17,8 +17,13 @@ export class ProfissaoRepository implements IProfissaoRepository {
   }
 
   buscarPorNome(nome: string): Promise<Profissao | null> {
-    return this.repository.findOneBy({
-      nome: ILike(`%${nome}%`),
+    return this.repository.findOne({
+      where: {
+        nome: ILike(`%${nome}%`),
+      },
+      relations: {
+        categoriaProfissional: true,
+      },
     });
   }
 

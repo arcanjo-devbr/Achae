@@ -1,41 +1,92 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type RascunhoCadastroProfissional = {
-  nome: string;
-  telefone: string;
+export type TrabalhoRascunhoCadastro = {
+  id: string;
   profissao: string;
   categoria: string;
-  cidade: string;
   descricaoServicos: string;
   status: "Ativo" | "Inativo";
 };
 
+export type RascunhoCadastroProfissional = {
+  nome: string;
+  telefone: string;
+  cidade: string;
+  trabalhos: TrabalhoRascunhoCadastro[];
+};
+
 const CHAVE_RASCUNHO = "@achae/rascunho-cadastro-profissional";
+
+function ehObjeto(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === "object" && valor !== null;
+}
+
+function validarTrabalho(valor: unknown): valor is TrabalhoRascunhoCadastro {
+  if (!ehObjeto(valor)) {
+    return false;
+  }
+
+  return (
+    typeof valor.id === "string" &&
+    typeof valor.profissao === "string" &&
+    typeof valor.categoria === "string" &&
+    typeof valor.descricaoServicos === "string" &&
+    (valor.status === "Ativo" || valor.status === "Inativo")
+  );
+}
 
 function validarRascunho(
   valor: unknown,
 ): valor is RascunhoCadastroProfissional {
-  if (typeof valor !== "object" || valor === null) {
+  if (!ehObjeto(valor)) {
     return false;
   }
 
-  const rascunho = valor as Record<string, unknown>;
-
-  const camposTexto = [
-    rascunho.nome,
-    rascunho.telefone,
-    rascunho.profissao,
-    rascunho.categoria,
-    rascunho.cidade,
-    rascunho.descricaoServicos,
-  ].every((campo) => typeof campo === "string");
-
   return (
-    camposTexto &&
-    (rascunho.status === undefined ||
-      rascunho.status === "Ativo" ||
-      rascunho.status === "Inativo")
+    typeof valor.nome === "string" &&
+    typeof valor.telefone === "string" &&
+    typeof valor.cidade === "string" &&
+    Array.isArray(valor.trabalhos) &&
+    valor.trabalhos.length > 0 &&
+    valor.trabalhos.every(validarTrabalho)
   );
+}
+
+function migrarRascunhoAntigo(
+  valor: unknown,
+): RascunhoCadastroProfissional | null {
+  if (!ehObjeto(valor)) {
+    return null;
+  }
+
+  if (
+    typeof valor.nome !== "string" ||
+    typeof valor.telefone !== "string" ||
+    typeof valor.profissao !== "string" ||
+    typeof valor.categoria !== "string" ||
+    typeof valor.cidade !== "string" ||
+    typeof valor.descricaoServicos !== "string" ||
+    (valor.status !== undefined &&
+      valor.status !== "Ativo" &&
+      valor.status !== "Inativo")
+  ) {
+    return null;
+  }
+
+  return {
+    nome: valor.nome,
+    telefone: valor.telefone,
+    cidade: valor.cidade,
+    trabalhos: [
+      {
+        id: "legado-0",
+        profissao: valor.profissao,
+        categoria: valor.categoria,
+        descricaoServicos: valor.descricaoServicos,
+        status: valor.status ?? "Ativo",
+      },
+    ],
+  };
 }
 
 export async function recuperarRascunhoCadastroProfissional() {
@@ -49,9 +100,17 @@ export async function recuperarRascunhoCadastroProfissional() {
     const valor: unknown = JSON.parse(valorArmazenado);
 
     if (validarRascunho(valor)) {
-      return { ...valor, status: valor.status ?? "Ativo" };
+      return valor;
     }
-  } catch {}
+
+    const rascunhoMigrado = migrarRascunhoAntigo(valor);
+    if (rascunhoMigrado) {
+      return rascunhoMigrado;
+    }
+  } catch {
+    await AsyncStorage.removeItem(CHAVE_RASCUNHO);
+    return null;
+  }
 
   await AsyncStorage.removeItem(CHAVE_RASCUNHO);
   return null;

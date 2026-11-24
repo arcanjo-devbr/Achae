@@ -9,3 +9,4 @@ export type Profissional = {
   telefone?: string;
   descricao?: string;
 };
+

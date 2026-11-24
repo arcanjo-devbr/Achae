@@ -1,9 +1,10 @@
-import type { Profissional } from "@/types/Profissional";
-import { apagarProfissional, carregarProfissionais } from "@/utils/profissionaisStorage";
+import { buscarUsuarioPorId, excluirUsuario } from "@/services/usuarioService";
+import type { UsuarioResponseDTO } from "@/types/Usuario";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,32 +15,113 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function DetalhesProfissional() {
   const insets = useSafeAreaInsets();
- 
-  const params = useLocalSearchParams<{
-      id: string,
-      nome: string,
-      profissao: string;
-      categoria: string;
-      localizacao: string;
-      imagem?: string;
-      status: "Ativo" | "Inativo";
-      telefone?: string;
-      descricao?: string;
+  const { id, profissional: profissionalParam } = useLocalSearchParams<{
+    id: string;
+    profissional?: string;
   }>();
- 
-  const profissional: Profissional = {
-    id: Number(params.id),
-    nome: params.nome,
-    profissao: params.profissao,
-    categoria: params.categoria,
-    localizacao: params.localizacao,
-    imagem: params.imagem ?? null,
-    status: params.status,
-    telefone: params.telefone,
-    descricao: params.descricao,
-  };
+  const [profissional, setProfissional] =
+    useState<UsuarioResponseDTO | null>(null);
+  const [nomeCidade, setNomeCidade] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [apagando, setApagando] = useState(false);
 
-  
+  function confirmarExclusao() {
+    if (!profissional) return;
+
+    Alert.alert(
+      "Excluir profissional",
+      `Deseja apagar ${profissional.nome}? Esta ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => void apagarProfissional(),
+        },
+      ],
+    );
+  }
+
+  async function apagarProfissional() {
+    if (!profissional) return;
+
+    setApagando(true);
+    try {
+      await excluirUsuario(profissional.id);
+      Alert.alert("Profissional excluído", "Os dados foram removidos.", [
+        { text: "OK", onPress: () => router.replace("/") },
+      ]);
+    } catch (erroExclusao) {
+      Alert.alert(
+        "Erro",
+        erroExclusao instanceof Error
+          ? erroExclusao.message
+          : "Não foi possível excluir o profissional.",
+      );
+    } finally {
+      setApagando(false);
+    }
+  }
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarDetalhes() {
+      if (!id) {
+        setErro("Profissional não informado.");
+        setCarregando(false);
+        return;
+      }
+
+      if (profissionalParam) {
+        try {
+          const usuario = JSON.parse(profissionalParam) as UsuarioResponseDTO;
+          if (!cancelado) {
+            setProfissional(usuario);
+          }
+
+          if (!cancelado) {
+            setNomeCidade(usuario.cidade_nome ?? "Não informada");
+            setErro(null);
+            setCarregando(false);
+          }
+          return;
+        } catch {
+          if (!cancelado) {
+            setProfissional(null);
+          }
+        }
+      }
+
+      try {
+        const usuario = await buscarUsuarioPorId(id);
+
+        if (!cancelado) {
+          setProfissional(usuario);
+          setNomeCidade(usuario.cidade_nome ?? "Não informada");
+          setErro(null);
+        }
+      } catch (erroCarregamento) {
+        if (!cancelado) {
+          setErro(
+            erroCarregamento instanceof Error
+              ? erroCarregamento.message
+              : "Não foi possível carregar os detalhes.",
+          );
+        }
+      } finally {
+        if (!cancelado) {
+          setCarregando(false);
+        }
+      }
+    }
+
+    void carregarDetalhes();
+    return () => {
+      cancelado = true;
+    };
+  }, [id, profissionalParam]);
 
   return (
     <ScrollView
@@ -55,7 +137,20 @@ export default function DetalhesProfissional() {
         <Text style={styles.tituloCabecalho}>Detalhes do profissional</Text>
       </View>
 
-      {profissional ? (
+      {carregando ? (
+        <View style={styles.estadoVazio}>
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text style={styles.descricao}>Carregando detalhes...</Text>
+        </View>
+      ) : erro ? (
+        <View style={styles.estadoVazio}>
+          <Text style={styles.nomeProfissional}>Não foi possível carregar</Text>
+          <Text style={styles.descricao}>{erro}</Text>
+          <Pressable style={styles.botaoEditar} onPress={() => router.back()}>
+            <Text style={styles.textoBotaoEditar}>Voltar para a lista</Text>
+          </Pressable>
+        </View>
+      ) : profissional ? (
         <>
           <View style={styles.cartaoPerfil}>
             <View style={styles.avatar}>
@@ -65,8 +160,17 @@ export default function DetalhesProfissional() {
             </View>
 
             <Text style={styles.nomeProfissional}>{profissional.nome}</Text>
-            <Text style={styles.profissao}>{profissional.profissao}</Text>
-            <Text style={styles.categoria}>{profissional.categoria}</Text>
+            {profissional.trabalhos.map((trabalho) => (
+              <Text key={trabalho.id} style={styles.profissao}>
+                {trabalho.profissao}
+              </Text>
+            ))}
+            {[...new Set(profissional.trabalhos.map((trabalho) => trabalho.categoria))]
+              .map((categoria) => (
+                <Text key={categoria} style={styles.categoria}>
+                  {categoria}
+                </Text>
+              ))}
           </View>
 
           <Text style={styles.tituloSecao}>Informações</Text>
@@ -92,7 +196,7 @@ export default function DetalhesProfissional() {
               </View>
               <View style={styles.dadosInformacao}>
                 <Text style={styles.rotulo}>Cidade</Text>
-                <Text style={styles.valor}>{profissional.localizacao}</Text>
+                <Text style={styles.valor}>{nomeCidade}</Text>
               </View>
             </View>
 
@@ -104,7 +208,27 @@ export default function DetalhesProfissional() {
               </View>
               <View style={styles.dadosInformacao}>
                 <Text style={styles.rotulo}>Categoria</Text>
-                <Text style={styles.valor}>{profissional.categoria}</Text>
+                <Text style={styles.valor}>
+                  {[...new Set(
+                    profissional.trabalhos.map((trabalho) => trabalho.categoria),
+                  )].join(", ") || "Não informada"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.divisor} />
+
+            <View style={styles.itemInformacao}>
+              <View style={styles.icone}>
+                <Text style={styles.simboloIcone}>◆</Text>
+              </View>
+              <View style={styles.dadosInformacao}>
+                <Text style={styles.rotulo}>Profissão</Text>
+                <Text style={styles.valor}>
+                  {[...new Set(
+                    profissional.trabalhos.map((trabalho) => trabalho.profissao),
+                  )].join(", ") || "Não informada"}
+                </Text>
               </View>
             </View>
           </View>
@@ -113,23 +237,39 @@ export default function DetalhesProfissional() {
 
           <View style={styles.cartaoDescricao}>
             <Text style={styles.descricao}>
-              {profissional.descricao || "Descrição não informada."}
+              {profissional.trabalhos
+                .map((trabalho) => trabalho.descricao)
+                .filter(Boolean)
+                .join("\n\n") || "Descrição não informada."}
             </Text>
           </View>
 
           <View style={styles.acoes}>
-            <Pressable style={styles.botaoEditar}   onPress={() =>
-    router.push({
-      pathname: "/profissional/editar",
-      params: { id: profissional.id },
-    })
-  }>
+            <Pressable
+              style={styles.botaoEditar}
+              onPress={() =>
+                router.push({
+                  pathname: "/profissional/editar",
+                  params: { id: profissional.id },
+                })
+              }
+            >
               <Text style={styles.textoBotaoEditar}>Editar profissional</Text>
             </Pressable>
 
-            <Pressable style={styles.botaoExcluir} onPress={() => apagarProfissional(profissional)}>
-              <Text style={styles.textoBotaoExcluir}>Excluir profissional</Text>
+            <Pressable
+              style={[
+                styles.botaoExcluir,
+                apagando && styles.botaoDesabilitado,
+              ]}
+              onPress={confirmarExclusao}
+              disabled={apagando}
+            >
+              <Text style={styles.textoBotaoExcluir}>
+                {apagando ? "Excluindo..." : "Excluir profissional"}
+              </Text>
             </Pressable>
+
           </View>
         </>
       ) : (
@@ -306,16 +446,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   botaoExcluir: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#FECACA",
+    backgroundColor: "#DC2626",
     borderRadius: 12,
-    padding: 16,
+    padding: 17,
     alignItems: "center",
   },
   textoBotaoExcluir: {
-    color: "#DC2626",
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+  },
+  botaoDesabilitado: {
+    opacity: 0.6,
   },
 });

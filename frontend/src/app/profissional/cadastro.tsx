@@ -1,12 +1,22 @@
-import { salvarProfissional } from "@/utils/profissionaisStorage";
+import { buscarCategorias } from "@/services/categoriaService";
+import { buscarCidades } from "@/services/cidadeService";
+import { buscarProfissoes } from "@/services/profissaoService";
+import { criarUsuario } from "@/services/usuarioService";
+import type {
+  CategoriaResponseDTO,
+  CidadeResponseDTO,
+  ProfissaoResponseDTO,
+} from "@/types/Catalogo";
+import type { UsuarioRequestDTO } from "@/types/Usuario";
 import {
   recuperarRascunhoCadastroProfissional,
   removerRascunhoCadastroProfissional,
   salvarRascunhoCadastroProfissional,
   type RascunhoCadastroProfissional,
+  type TrabalhoRascunhoCadastro,
 } from "@/utils/rascunhoCadastroProfissional";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -18,17 +28,17 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const categorias = [
-  "Elétrica",
-  "Hidráulica",
-  "Pintura",
-  "Construção",
-  "Informática",
-  "Limpeza",
-  "Manutenção",
-  "Outros",
-];
 const opcoesStatus = ["Ativo", "Inativo"] as const;
+
+function criarTrabalhoVazio(): TrabalhoRascunhoCadastro {
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    profissao: "",
+    categoria: "",
+    descricaoServicos: "",
+    status: "Ativo",
+  };
+}
 
 function formatarTelefone(valor: string) {
   const digitos = valor.replace(/\D/g, "").slice(0, 11);
@@ -59,15 +69,74 @@ export default function CadastroProfissional() {
   const [rascunho, setRascunho] = useState<RascunhoCadastroProfissional>({
     nome: "",
     telefone: "",
-    profissao: "",
-    categoria: "",
     cidade: "",
-    descricaoServicos: "",
-    status: "Ativo",
+    trabalhos: [criarTrabalhoVazio()],
   });
+  const [cidades, setCidades] = useState<CidadeResponseDTO[]>([]);
+  const [carregandoCidades, setCarregandoCidades] = useState(true);
+  const [erroCidades, setErroCidades] = useState<string | null>(null);
+  const [categorias, setCategorias] = useState<CategoriaResponseDTO[]>([]);
+  const [carregandoCategorias, setCarregandoCategorias] = useState(true);
+  const [erroCategorias, setErroCategorias] = useState<string | null>(null);
+  const [profissoesPorCategoria, setProfissoesPorCategoria] = useState<
+    Record<number, ProfissaoResponseDTO[]>
+  >({});
+  const [categoriasCarregandoProfissoes, setCategoriasCarregandoProfissoes] =
+    useState<Record<number, boolean>>({});
+  const [errosProfissoes, setErrosProfissoes] = useState<
+    Record<number, string>
+  >({});
+  const requisicoesProfissoes = useRef(new Set<number>());
+  const categoriasComProfissoes = useRef(new Set<number>());
   const [rascunhoCarregado, setRascunhoCarregado] = useState(false);
-  const [mostrarCategorias, setMostrarCategorias] = useState(false);
+  const [categoriaAberta, setCategoriaAberta] = useState<number | null>(null);
+  const [profissaoAberta, setProfissaoAberta] = useState<number | null>(null);
+  const [mostrarCidades, setMostrarCidades] = useState(false);
   const [salvando, setSalvando] = useState(false);
+
+  async function carregarProfissoes(categoriaId: number) {
+    if (
+      categoriasComProfissoes.current.has(categoriaId) ||
+      requisicoesProfissoes.current.has(categoriaId)
+    ) {
+      return;
+    }
+
+    requisicoesProfissoes.current.add(categoriaId);
+    setCategoriasCarregandoProfissoes((atual) => ({
+      ...atual,
+      [categoriaId]: true,
+    }));
+
+    try {
+      const lista = await buscarProfissoes(categoriaId);
+      setProfissoesPorCategoria((atual) => ({
+        ...atual,
+        [categoriaId]: lista,
+      }));
+      setErrosProfissoes((atual) => {
+        const novosErros = { ...atual };
+        delete novosErros[categoriaId];
+        return novosErros;
+      });
+      categoriasComProfissoes.current.add(categoriaId);
+    } catch (erro) {
+      console.error("Não foi possível carregar as profissões.", erro);
+      setErrosProfissoes((atual) => ({
+        ...atual,
+        [categoriaId]:
+          erro instanceof Error
+            ? erro.message
+            : "Não foi possível carregar as profissões.",
+      }));
+    } finally {
+      requisicoesProfissoes.current.delete(categoriaId);
+      setCategoriasCarregandoProfissoes((atual) => ({
+        ...atual,
+        [categoriaId]: false,
+      }));
+    }
+  }
 
   useEffect(() => {
     let cancelado = false;
@@ -79,19 +148,96 @@ export default function CadastroProfissional() {
         if (!cancelado && rascunhoSalvo) {
           setRascunho(rascunhoSalvo);
         }
-
-        if (!cancelado) {
-          setRascunhoCarregado(true);
-        }
       } catch (erro) {
         console.error(
           "Não foi possível recuperar o rascunho do cadastro.",
           erro,
         );
+      } finally {
+        if (!cancelado) {
+          setRascunhoCarregado(true);
+        }
       }
     }
 
     void carregarRascunho();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarListaCategorias() {
+      try {
+        const lista = await buscarCategorias();
+        if (!cancelado) {
+          setCategorias(lista);
+          setErroCategorias(null);
+        }
+      } catch (erro) {
+        console.error("Não foi possível carregar as categorias.", erro);
+        if (!cancelado) {
+          setErroCategorias(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível carregar as categorias.",
+          );
+        }
+      } finally {
+        if (!cancelado) {
+          setCarregandoCategorias(false);
+        }
+      }
+    }
+
+    void carregarListaCategorias();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    for (const trabalho of rascunho.trabalhos) {
+      const categoria = categorias.find(
+        (opcao) => opcao.nome === trabalho.categoria,
+      );
+      if (categoria) {
+        void carregarProfissoes(categoria.id);
+      }
+    }
+  }, [categorias, rascunho.trabalhos]);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregarListaCidades() {
+      try {
+        const lista = await buscarCidades();
+        if (!cancelado) {
+          setCidades(lista);
+          setErroCidades(null);
+        }
+      } catch (erro) {
+        console.error("Não foi possível carregar as cidades.", erro);
+        if (!cancelado) {
+          setErroCidades(
+            erro instanceof Error
+              ? erro.message
+              : "Não foi possível carregar as cidades.",
+          );
+        }
+      } finally {
+        if (!cancelado) {
+          setCarregandoCidades(false);
+        }
+      }
+    }
+
+    void carregarListaCidades();
 
     return () => {
       cancelado = true;
@@ -108,29 +254,57 @@ export default function CadastroProfissional() {
     });
   }, [rascunho, rascunhoCarregado]);
 
-  function atualizarCampo<K extends keyof RascunhoCadastroProfissional>(
+  function atualizarCampo<K extends "nome" | "telefone" | "cidade">(
     campo: K,
-    valor: RascunhoCadastroProfissional[K],
+    valor: string,
   ) {
     setRascunho((atual) => ({ ...atual, [campo]: valor }));
   }
 
-  async function cadastrarProfissional() {
-    const camposObrigatorios: (keyof RascunhoCadastroProfissional)[] = [
-      "nome",
-      "telefone",
-      "profissao",
-      "categoria",
-      "cidade",
-    ];
-    const possuiCampoObrigatorioVazio = camposObrigatorios.some(
-      (campo) => !rascunho[campo].trim(),
-    );
+  function atualizarTrabalho<K extends keyof TrabalhoRascunhoCadastro>(
+    indice: number,
+    campo: K,
+    valor: TrabalhoRascunhoCadastro[K],
+  ) {
+    setRascunho((atual) => ({
+      ...atual,
+      trabalhos: atual.trabalhos.map((trabalho, indiceAtual) =>
+        indiceAtual === indice ? { ...trabalho, [campo]: valor } : trabalho,
+      ),
+    }));
+  }
 
-    if (possuiCampoObrigatorioVazio) {
+  function adicionarTrabalho() {
+    setRascunho((atual) => ({
+      ...atual,
+      trabalhos: [...atual.trabalhos, criarTrabalhoVazio()],
+    }));
+  }
+
+  function removerTrabalho(indice: number) {
+    setRascunho((atual) =>
+      atual.trabalhos.length > 1
+        ? {
+            ...atual,
+            trabalhos: atual.trabalhos.filter(
+              (_, indiceAtual) => indiceAtual !== indice,
+            ),
+          }
+        : atual,
+    );
+    setCategoriaAberta(null);
+    setProfissaoAberta(null);
+  }
+
+  async function cadastrarProfissional() {
+    if (
+      !rascunho.nome.trim() ||
+      !rascunho.telefone.trim() ||
+      !rascunho.cidade
+    ) {
       Alert.alert(
         "Campos obrigatórios",
-        "Preencha nome, telefone, profissão, categoria e cidade para continuar.",
+        "Preencha nome, telefone e cidade para continuar.",
       );
       return;
     }
@@ -143,26 +317,80 @@ export default function CadastroProfissional() {
       return;
     }
 
+    const cidadeId = Number(rascunho.cidade);
+    if (
+      !Number.isSafeInteger(cidadeId) ||
+      !cidades.some((cidade) => cidade.id === cidadeId)
+    ) {
+      Alert.alert("Cidade inválida", "Selecione uma cidade da lista.");
+      return;
+    }
+
+    const trabalhoInvalido = rascunho.trabalhos.some((trabalho) => {
+      const categoria = categorias.find(
+        (opcao) => opcao.nome === trabalho.categoria,
+      );
+      return (
+        !categoria ||
+        !trabalho.profissao.trim() ||
+        !profissoesPorCategoria[categoria.id]?.some(
+          (profissao) => profissao.nome === trabalho.profissao,
+        )
+      );
+    });
+
+    if (trabalhoInvalido) {
+      Alert.alert(
+        "Trabalhos incompletos",
+        "Selecione uma profissão e categoria disponíveis para cada trabalho.",
+      );
+      return;
+    }
+
+    if (
+      rascunho.trabalhos.some(
+        (trabalho) =>
+          trabalho.profissao.trim().length > 100 ||
+          trabalho.descricaoServicos.trim().length > 500,
+      )
+    ) {
+      Alert.alert(
+        "Limite de caracteres",
+        "Cada profissão pode ter até 100 caracteres e cada descrição até 500.",
+      );
+      return;
+    }
+
     setSalvando(true);
 
     try {
       await salvarRascunhoCadastroProfissional(rascunho);
-      await salvarProfissional({
-        id: Date.now(),
+      const dadosCadastro: UsuarioRequestDTO = {
         nome: rascunho.nome.trim(),
-        profissao: rascunho.profissao.trim(),
-        categoria: rascunho.categoria,
-        localizacao: rascunho.cidade.trim(),
-        imagem: null,
         telefone: rascunho.telefone.trim(),
-        descricao: rascunho.descricaoServicos.trim(),
-        status: rascunho.status,
-      });
-      await removerRascunhoCadastroProfissional();
+        cidade: cidadeId,
+        trabalhos: rascunho.trabalhos.map((trabalho) => ({
+          profissao: trabalho.profissao.trim(),
+          categoria: trabalho.categoria,
+          descricao: trabalho.descricaoServicos.trim(),
+          status: trabalho.status === "Ativo",
+        })),
+      };
+
+      await criarUsuario(dadosCadastro);
+      let falhaAoLimparRascunho = false;
+      try {
+        await removerRascunhoCadastroProfissional();
+      } catch (erro) {
+        falhaAoLimparRascunho = true;
+        console.error("Não foi possível remover o rascunho do cadastro.", erro);
+      }
 
       Alert.alert(
         "Cadastro realizado!",
-        "O profissional foi cadastrado com sucesso.",
+        falhaAoLimparRascunho
+          ? "O usuário foi cadastrado, mas não foi possível limpar o rascunho salvo."
+          : "O usuário foi cadastrado com sucesso.",
         [
           {
             text: "OK",
@@ -174,7 +402,9 @@ export default function CadastroProfissional() {
       console.error("Não foi possível cadastrar o profissional.", erro);
       Alert.alert(
         "Falha no cadastro",
-        "Não foi possível salvar o profissional. Os dados preenchidos foram mantidos para uma nova tentativa.",
+        erro instanceof Error
+          ? erro.message
+          : "Não foi possível cadastrar o usuário. Os dados preenchidos foram mantidos para uma nova tentativa.",
       );
     } finally {
       setSalvando(false);
@@ -208,7 +438,7 @@ export default function CadastroProfissional() {
       </View>
 
       <View style={styles.cartao}>
-        <Text style={styles.tituloSecao}>Dados do profissional</Text>
+        <Text style={styles.tituloSecao}>Dados do usuário</Text>
 
         <Text style={styles.rotulo}>Nome completo *</Text>
         <TextInput
@@ -227,120 +457,254 @@ export default function CadastroProfissional() {
           placeholderTextColor="#94A3B8"
           keyboardType="phone-pad"
           value={rascunho.telefone}
-          onChangeText={(valor) => 
-            atualizarCampo("telefone", formatarTelefone(valor))}
+          onChangeText={(valor) =>
+            atualizarCampo("telefone", formatarTelefone(valor))
+          }
         />
 
-        <Text style={styles.rotulo}>Profissão *</Text>
-        <TextInput
-          style={styles.campo}
-          placeholder="Ex.: Eletricista"
-          placeholderTextColor="#94A3B8"
-          autoCapitalize="words"
-          value={rascunho.profissao}
-          onChangeText={(valor) => atualizarCampo("profissao", valor)}
-        />
-
-        <Text style={styles.rotulo}>Categoria *</Text>
-
+        <Text style={styles.rotulo}>Cidade *</Text>
         <Pressable
           style={styles.seletor}
-          onPress={() => setMostrarCategorias(!mostrarCategorias)}
+          onPress={() => setMostrarCidades((aberta) => !aberta)}
+          disabled={carregandoCidades || cidades.length === 0}
         >
           <Text
             style={[
               styles.textoSeletor,
-              !rascunho.categoria && styles.placeholder,
+              !rascunho.cidade && styles.placeholder,
             ]}
           >
-            {rascunho.categoria || "Selecione uma categoria"}
+            {carregandoCidades
+              ? "Carregando cidades..."
+              : (cidades.find((cidade) => String(cidade.id) === rascunho.cidade)
+                  ?.nome ?? "Selecione uma cidade")}
           </Text>
-
-          <Text style={styles.setaSeletor}>
-            {mostrarCategorias ? "⌃" : "⌄"}
-          </Text>
+          <Text style={styles.setaSeletor}>{mostrarCidades ? "⌃" : "⌄"}</Text>
         </Pressable>
-
-        {mostrarCategorias && (
+        {erroCidades && (
+          <Text style={styles.textoErroCidades}>{erroCidades}</Text>
+        )}
+        {mostrarCidades && (
           <View style={styles.listaCategorias}>
-            {categorias.map((item) => (
+            {cidades.map((cidade) => (
               <Pressable
-                key={item}
+                key={cidade.id}
                 style={styles.opcaoCategoria}
                 onPress={() => {
-                  atualizarCampo("categoria", item);
-                  setMostrarCategorias(false);
+                  atualizarCampo("cidade", String(cidade.id));
+                  setMostrarCidades(false);
                 }}
               >
                 <Text
                   style={[
                     styles.textoOpcao,
-                    rascunho.categoria === item && styles.opcaoSelecionada,
+                    rascunho.cidade === String(cidade.id) &&
+                      styles.opcaoSelecionada,
                   ]}
                 >
-                  {item}
+                  {cidade.nome}
                 </Text>
               </Pressable>
             ))}
           </View>
         )}
-
-        <Text style={styles.rotulo}>Cidade *</Text>
-        <TextInput
-          style={styles.campo}
-          placeholder="Digite a cidade"
-          placeholderTextColor="#94A3B8"
-          autoCapitalize="words"
-          value={rascunho.cidade}
-          onChangeText={(valor) => atualizarCampo("cidade", valor)}
-        />
-
-        <Text style={styles.rotulo}>Descrição dos serviços</Text>
-        <TextInput
-          style={[styles.campo, styles.campoDescricao]}
-          placeholder="Descreva os serviços oferecidos"
-          placeholderTextColor="#94A3B8"
-          multiline
-          textAlignVertical="top"
-          value={rascunho.descricaoServicos}
-          onChangeText={(valor) => atualizarCampo("descricaoServicos", valor)}
-        />
       </View>
 
-      <View style={styles.cartao}>
-        <Text style={styles.tituloSecao}>Status do profissional</Text>
-        <Text style={styles.textoAjuda}>
-          Indique se o profissional está ativo no sistema.
-        </Text>
+      {rascunho.trabalhos.map((trabalho, indice) => {
+        const categoriaId = categorias.find(
+          (categoria) => categoria.nome === trabalho.categoria,
+        )?.id;
+        const profissoes = categoriaId
+          ? (profissoesPorCategoria[categoriaId] ?? [])
+          : [];
 
-        <View style={styles.opcoesStatus}>
-          {opcoesStatus.map((opcao) => (
+        return (
+          <View key={trabalho.id} style={styles.cartao}>
+            <View style={styles.cabecalhoTrabalho}>
+              <Text style={styles.tituloSecao}>Trabalho {indice + 1}</Text>
+              {rascunho.trabalhos.length > 1 && (
+                <Pressable
+                  onPress={() => removerTrabalho(indice)}
+                >
+                  <Text style={styles.textoRemoverTrabalho}>Remover</Text>
+                </Pressable>
+              )}
+            </View>
+
+            <Text style={styles.rotulo}>Categoria *</Text>
             <Pressable
-              key={opcao}
-              style={[
-                styles.botaoStatus,
-                rascunho.status === opcao && styles.botaoStatusSelecionado,
-              ]}
-              onPress={() => atualizarCampo("status", opcao)}
+              style={styles.seletor}
+              disabled={carregandoCategorias || categorias.length === 0}
+              onPress={() =>
+                setCategoriaAberta((aberta) =>
+                  aberta === indice ? null : indice,
+                )
+              }
             >
               <Text
                 style={[
-                  styles.textoStatus,
-                  rascunho.status === opcao && styles.textoStatusSelecionado,
+                  styles.textoSeletor,
+                  !trabalho.categoria && styles.placeholder,
                 ]}
               >
-                {opcao}
+                {carregandoCategorias
+                  ? "Carregando categorias..."
+                  : (trabalho.categoria || "Selecione uma categoria")}
+              </Text>
+              <Text style={styles.setaSeletor}>
+                {categoriaAberta === indice ? "⌃" : "⌄"}
               </Text>
             </Pressable>
-          ))}
-        </View>
-      </View>
+            {erroCategorias && (
+              <Text style={styles.textoErroCidades}>{erroCategorias}</Text>
+            )}
+            {categoriaAberta === indice && (
+              <View style={styles.listaCategorias}>
+                {categorias.map((categoria) => (
+                  <Pressable
+                    key={categoria.id}
+                    style={styles.opcaoCategoria}
+                    onPress={() => {
+                      atualizarTrabalho(indice, "categoria", categoria.nome);
+                      atualizarTrabalho(indice, "profissao", "");
+                      setCategoriaAberta(null);
+                      setProfissaoAberta(null);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.textoOpcao,
+                        trabalho.categoria === categoria.nome &&
+                          styles.opcaoSelecionada,
+                      ]}
+                    >
+                      {categoria.nome}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            <Text style={styles.rotulo}>Profissão *</Text>
+            <Pressable
+              style={styles.seletor}
+              disabled={
+                !categoriaId ||
+                categoriasCarregandoProfissoes[categoriaId] ||
+                profissoes.length === 0
+              }
+              onPress={() =>
+                setProfissaoAberta((aberta) =>
+                  aberta === indice ? null : indice,
+                )
+              }
+            >
+              <Text
+                style={[
+                  styles.textoSeletor,
+                  !trabalho.profissao && styles.placeholder,
+                ]}
+              >
+                {categoriaId && categoriasCarregandoProfissoes[categoriaId]
+                  ? "Carregando profissões..."
+                  : categoriaId && profissoes.length === 0
+                    ? "Nenhuma profissão disponível"
+                    : (trabalho.profissao || "Selecione uma profissão")}
+              </Text>
+              <Text style={styles.setaSeletor}>
+                {profissaoAberta === indice ? "⌃" : "⌄"}
+              </Text>
+            </Pressable>
+            {categoriaId && errosProfissoes[categoriaId] && (
+              <Text style={styles.textoErroCidades}>
+                {errosProfissoes[categoriaId]}
+              </Text>
+            )}
+            {profissaoAberta === indice && categoriaId && (
+              <View style={styles.listaCategorias}>
+                {profissoes.map((profissao) => (
+                  <Pressable
+                    key={profissao.id}
+                    style={styles.opcaoCategoria}
+                    onPress={() => {
+                      atualizarTrabalho(indice, "profissao", profissao.nome);
+                      setProfissaoAberta(null);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.textoOpcao,
+                        trabalho.profissao === profissao.nome &&
+                          styles.opcaoSelecionada,
+                      ]}
+                    >
+                      {profissao.nome}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            <Text style={styles.rotulo}>Descrição dos serviços</Text>
+            <TextInput
+              style={[styles.campo, styles.campoDescricao]}
+              placeholder="Descreva os serviços oferecidos"
+              placeholderTextColor="#94A3B8"
+              multiline
+              textAlignVertical="top"
+              value={trabalho.descricaoServicos}
+              onChangeText={(valor) =>
+                atualizarTrabalho(indice, "descricaoServicos", valor)
+              }
+            />
+
+            <Text style={styles.rotulo}>Status *</Text>
+            <View style={styles.opcoesStatus}>
+              {opcoesStatus.map((opcao) => (
+                <Pressable
+                  key={opcao}
+                  style={[
+                    styles.botaoStatus,
+                    trabalho.status === opcao && styles.botaoStatusSelecionado,
+                  ]}
+                  onPress={() => atualizarTrabalho(indice, "status", opcao)}
+                >
+                  <Text
+                    style={[
+                      styles.textoStatus,
+                      trabalho.status === opcao &&
+                        styles.textoStatusSelecionado,
+                    ]}
+                  >
+                    {opcao}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        );
+      })}
+
+      <Pressable
+        style={styles.botaoAdicionarTrabalho}
+        onPress={adicionarTrabalho}
+      >
+        <Text style={styles.textoBotaoAdicionarTrabalho}>
+          + Adicionar trabalho
+        </Text>
+      </Pressable>
 
       <View style={styles.acoes}>
         <Pressable
           style={[styles.botaoCadastrar, salvando && styles.botaoDesabilitado]}
           onPress={() => void cadastrarProfissional()}
-          disabled={salvando || !rascunhoCarregado}
+          disabled={
+            salvando ||
+            !rascunhoCarregado ||
+            carregandoCidades ||
+            carregandoCategorias ||
+            Object.values(categoriasCarregandoProfissoes).some(Boolean)
+          }
         >
           <Text style={styles.textoBotaoCadastrar}>
             {salvando ? "Salvando..." : "Cadastrar profissional"}
@@ -400,6 +764,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     marginBottom: 20,
+  },
+  cabecalhoTrabalho: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  textoRemoverTrabalho: {
+    color: "#DC2626",
+    fontSize: 14,
+    fontWeight: "600",
   },
   tituloSecao: {
     fontSize: 17,
@@ -476,6 +850,25 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginTop: -8,
     marginBottom: 16,
+  },
+  textoErroCidades: {
+    color: "#DC2626",
+    fontSize: 13,
+    marginTop: 6,
+  },
+  botaoAdicionarTrabalho: {
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2563EB",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 20,
+    backgroundColor: "#FFFFFF",
+  },
+  textoBotaoAdicionarTrabalho: {
+    color: "#2563EB",
+    fontSize: 15,
+    fontWeight: "700",
   },
   opcoesStatus: {
     flexDirection: "row",

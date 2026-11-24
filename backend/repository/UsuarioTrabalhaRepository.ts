@@ -8,4 +8,17 @@ export class UsuarioTrabalhaRepository implements IUsuarioTrabalhaRepository {
   salvar(vinculo: UsuarioTrabalha): Promise<UsuarioTrabalha> {
     return this.repository.save(vinculo);
   }
+
+  buscarPorUsuario(usuarioId: string): Promise<UsuarioTrabalha[]> {
+    return this.repository.find({
+      where: { usuario: { identificador: usuarioId } },
+      relations: { profissao: { categoriaProfissional: true } },
+    });
+  }
+
+  async excluirPorUsuario(usuarioId: string): Promise<void> {
+    await this.repository.delete({
+      usuario: { identificador: usuarioId },
+    });
+  }
 }

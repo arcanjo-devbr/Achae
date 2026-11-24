@@ -12,6 +12,7 @@ import {
 } from "../repository";
 import { IUsuarioService } from "./IUsuarioService";
 import { IUsuarioTrabalhaService } from "./IUsuarioTrabalhaService";
+import type { UsuarioFiltros } from "../repository/IUsuarioRepository";
 
 
 
@@ -46,18 +47,22 @@ export class UsuarioServiceImpl implements IUsuarioService {
 
     const trabalhosResolvidos = await Promise.all(
       usuarioRequestDTO.trabalhos.map(async (trabalho) => {
-        let [categoria, profissao] = await Promise.all([
+        const [categoria, profissao] = await Promise.all([
           this.categoriaRepository.buscarPorNome(trabalho.categoria),
           this.profissaoRepository.buscarPorNome(trabalho.profissao),
         ]);
 
         if (!categoria) {
-            const categoriaProfissional : CategoriaProfissional = this.categoriaProfissional.toEntity({categoria: trabalho.categoria});
-            categoria = await this.categoriaRepository.salvar(categoriaProfissional);
+          throw new HttpError(
+            400,
+            `Categoria ${trabalho.categoria} não encontrada.`,
+          );
         }
         if (!profissao) {
-            const profissaoUsuario : Profissao = this.profissaoMapper.toEntity({especialidade: trabalho.profissao});
-            profissao = await this.profissaoRepository.salvar(profissaoUsuario);
+          throw new HttpError(
+            400,
+            `Profissão ${trabalho.profissao} não encontrada.`,
+          );
         }
         if (
           profissao.categoriaProfissional.identificador !==
@@ -105,5 +110,118 @@ export class UsuarioServiceImpl implements IUsuarioService {
   async buscarUsuario(): Promise<UsuarioResponseDTO[]> {
     const usuarios = await this.usuarioRepository.buscarTodosComRelacoes();
     return usuarios.map((usuario) => this.usuarioMapper.toDTOResponse(usuario));
+  }
+
+  async buscarUsuarioComFiltros(
+    filtros: UsuarioFiltros,
+  ): Promise<UsuarioResponseDTO[]> {
+    const usuarios = await this.usuarioRepository.buscarComFiltros(filtros);
+    return usuarios.map((usuario) => this.usuarioMapper.toDTOResponse(usuario));
+  }
+
+  async buscarUsuarioPorId(
+    id: string,
+  ): Promise<UsuarioResponseDTO | null> {
+    const usuario =
+      await this.usuarioRepository.buscarPorIdComRelacoes(id);
+    return usuario ? this.usuarioMapper.toDTOResponse(usuario) : null;
+  }
+
+  async editarUsuario(
+    id: string,
+    usuarioRequestDTO: UsuarioRequestDTO,
+  ): Promise<UsuarioResponseDTO> {
+    const usuarioExistente =
+      await this.usuarioRepository.buscarPorIdComRelacoes(id);
+    if (!usuarioExistente) {
+      throw new HttpError(404, "Profissional não encontrado.");
+    }
+
+    const usuarioComMesmoNome =
+      await this.usuarioRepository.buscarPorNome(usuarioRequestDTO.nome);
+    if (
+      usuarioComMesmoNome &&
+      usuarioComMesmoNome.identificador !== usuarioExistente.identificador
+    ) {
+      throw new ConflictError("Profissional já cadastrado.");
+    }
+
+    const cidade = await this.cidadeRepository.buscarPorId(
+      usuarioRequestDTO.cidade,
+    );
+    if (!cidade) {
+      throw new HttpError(404, "Cidade não encontrada.");
+    }
+
+    const trabalhosResolvidos = await Promise.all(
+      usuarioRequestDTO.trabalhos.map(async (trabalho) => {
+        const [categoria, profissao] = await Promise.all([
+          this.categoriaRepository.buscarPorNome(trabalho.categoria),
+          this.profissaoRepository.buscarPorNome(trabalho.profissao),
+        ]);
+
+        if (!categoria) {
+          throw new HttpError(
+            400,
+            `Categoria ${trabalho.categoria} não encontrada.`,
+          );
+        }
+        if (!profissao) {
+          throw new HttpError(
+            400,
+            `Profissão ${trabalho.profissao} não encontrada.`,
+          );
+        }
+        if (
+          !profissao.categoriaProfissional ||
+          profissao.categoriaProfissional.identificador !==
+            categoria.identificador
+        ) {
+          throw new HttpError(
+            400,
+            `A profissão ${trabalho.profissao} não pertence à categoria ${trabalho.categoria}.`,
+          );
+        }
+
+        return { trabalho, profissao };
+      }),
+    );
+
+    usuarioExistente.nome = usuarioRequestDTO.nome;
+    usuarioExistente.telefone = usuarioRequestDTO.telefone;
+    usuarioExistente.cidade = cidade;
+    const usuarioSalvo =
+      await this.usuarioRepository.salvar(usuarioExistente);
+
+    await this.usuarioTrabalhaService.substituirProfissoesUsuario(
+      usuarioSalvo,
+      trabalhosResolvidos.map(({ trabalho, profissao }) => ({
+        usuario: usuarioSalvo,
+        profissao,
+        status: trabalho.status,
+        descricao: trabalho.descricao,
+      })),
+    );
+
+    const usuarioCompleto =
+      await this.usuarioRepository.buscarPorIdComRelacoes(
+        usuarioSalvo.identificador,
+      );
+    if (!usuarioCompleto) {
+      throw new Error("O usuário editado não foi encontrado.");
+    }
+
+    return this.usuarioMapper.toDTOResponse(usuarioCompleto);
+  }
+
+  async excluirUsuario(id: string): Promise<void> {
+    const usuario =
+      await this.usuarioRepository.buscarPorIdComRelacoes(id);
+    if (!usuario) {
+      throw new HttpError(404, "Profissional não encontrado.");
+    }
+
+    await this.usuarioTrabalhaService.excluirProfissoesUsuario(usuario);
+    await this.usuarioRepository.excluirPorId(id);
   }
 }

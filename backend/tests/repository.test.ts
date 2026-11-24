@@ -75,6 +75,10 @@ test("repositories de catálogo executam consultas e preservam filtros", async (
       profissaoCalls.push(options);
       return [profissao];
     },
+    findOne: async (options: object) => {
+      profissaoCalls.push(options);
+      return profissao;
+    },
     findOneBy: async (where: object) => {
       profissaoCalls.push(where);
       return profissao;
@@ -115,6 +119,19 @@ test("repositories de catálogo executam consultas e preservam filtros", async (
   assert.equal(
     (cidadeCalls[1] as { nome: { _type: string; _value: string } }).nome._value,
     "%rio%",
+  );
+  assert.equal(
+    (profissaoCalls[1] as {
+      relations: { categoriaProfissional: boolean };
+      where: { nome: { _type: string; _value: string } };
+    }).relations.categoriaProfissional,
+    true,
+  );
+  assert.equal(
+    (profissaoCalls[1] as {
+      where: { nome: { _type: string; _value: string } };
+    }).where.nome._type,
+    "ilike",
   );
   assert.deepEqual(profissaoCalls[2], {
     where: { categoriaProfissional: { identificador: 3 } },

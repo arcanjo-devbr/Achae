@@ -2,8 +2,8 @@
 import { BotaoCadastrarProfissional } from "@/componentes/BotaoCadastrarProfissional";
 import { CampoBuscaItem } from "@/componentes/CampoBuscaItem";
 import { ProfissionalItem } from "@/componentes/ProfissionalItem";
-import type { Profissional } from "@/types/Profissional";
-import { carregarProfissionais } from "@/utils/profissionaisStorage";
+import { UsuarioResponseDTO } from "@/types/Usuario";
+import { lerProfissionaisSalvos } from "@/utils/profissionaisStorage";
 import { Feather } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -31,13 +31,16 @@ export default function Index() {
   const [busca, setBusca] = useState("");
   const [categoriasSelecionadas, setCategoriasSelecionadas] =
     useState<string[]>([]);
-  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+  const [profissionais, setProfissionais] = useState<UsuarioResponseDTO[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       let ativo = true;
 
-      void carregarProfissionais()
+      void lerProfissionaisSalvos({
+        busca,
+        categorias: categoriasSelecionadas,
+      })
         .then((lista) => {
           if (ativo) {
             setProfissionais(lista);
@@ -53,23 +56,7 @@ export default function Index() {
       return () => {
         ativo = false;
       };
-    }, []),
-  );
-
-  const termoBusca = busca.trim().toLocaleLowerCase();
-
-  const profissionaisFiltrados = profissionais.filter(
-    ({ nome, profissao, categoria }) => {
-      const correspondeBusca =
-        nome.toLocaleLowerCase().includes(termoBusca) ||
-        profissao.toLocaleLowerCase().includes(termoBusca);
-
-      const correspondeCategoria =
-        categoriasSelecionadas.length === 0 ||
-        categoriasSelecionadas.includes(categoria);
-
-      return correspondeBusca && correspondeCategoria;
-    },
+    }, [busca, categoriasSelecionadas]),
   );
 
   function alternarCategoria(categoria: string) {
@@ -158,7 +145,7 @@ export default function Index() {
 
       <FlatList
         style={styles.listaProfissionais}
-        data={profissionaisFiltrados}
+        data={profissionais}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <ProfissionalItem
@@ -166,7 +153,10 @@ export default function Index() {
             selecionarServico={() =>
               router.push({
                 pathname: "/profissional/detalhes",
-                params: { ...item },
+                params: {
+                  id: item.id,
+                  profissional: JSON.stringify(item),
+                },
               })
             }
           />

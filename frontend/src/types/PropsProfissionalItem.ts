@@ -1,6 +1,6 @@
-import { Profissional } from "./Profissional"
+import { UsuarioResponseDTO } from "./Usuario"
 
 export type PropsProfissionalItem = {
-    dadosProfissional: Profissional,
+    dadosProfissional: UsuarioResponseDTO,
     selecionarServico: () => void
 }

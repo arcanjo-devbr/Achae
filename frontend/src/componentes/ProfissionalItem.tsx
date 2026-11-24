@@ -21,20 +21,21 @@ export function ProfissionalItem({
           >
             {dadosProfissional.nome}
           </Text>
-          <Text
-            style={styles.textoProfissao}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {dadosProfissional.profissao}
-          </Text>
-          <Text
-            style={styles.textoLocalizacao}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {dadosProfissional.localizacao}
-          </Text>
+
+          {
+            dadosProfissional.trabalhos.map((trabalho) => {
+                 return (
+                  <Text
+                      style={styles.textoProfissao}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {trabalho.profissao}
+                 </Text>
+                 )
+            })
+          }
+         
         </View>
       </View>
 

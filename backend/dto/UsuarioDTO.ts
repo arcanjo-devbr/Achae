@@ -25,5 +25,6 @@ export type UsuarioResponseDTO = Readonly<{
   nome: string;
   telefone: string;
   cidade: number;
+  cidade_nome?: string;
   trabalhos: readonly TrabalhoResponseDTO[];
 }>;

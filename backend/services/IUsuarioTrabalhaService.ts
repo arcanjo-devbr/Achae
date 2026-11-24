@@ -9,4 +9,6 @@ export type UsuarioTrabalhaInput = Readonly<{
 
 export interface IUsuarioTrabalhaService {
   relacionarProfissaoUsuario(dados: UsuarioTrabalhaInput): Promise<void>;
+  substituirProfissoesUsuario(usuario: Usuario, trabalhos: UsuarioTrabalhaInput[]): Promise<void>;
+  excluirProfissoesUsuario(usuario: Usuario): Promise<void>;
 }

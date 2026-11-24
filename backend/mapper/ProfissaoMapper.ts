@@ -1,9 +1,10 @@
 
-import {Profissao, Usuario } from "../entities";
+import { CategoriaProfissional, Profissao } from "../entities";
 import { AbstractMapper } from "./AbstractMapper";
 
 export type ProfissaoEntityInput = Readonly<{
-  nome: string
+  nome: string;
+  categoriaProfissional: CategoriaProfissional;
 }>;
 
 export class ProfissaoMapper extends AbstractMapper<
@@ -11,9 +12,13 @@ export class ProfissaoMapper extends AbstractMapper<
   void,
   ProfissaoEntityInput
 > {
-  toEntity({ nome }: ProfissaoEntityInput): Profissao {
+  toEntity({
+    nome,
+    categoriaProfissional,
+  }: ProfissaoEntityInput): Profissao {
     return Object.assign(new Profissao(), {
-      nome
+      nome,
+      categoriaProfissional,
     });
   }
 

@@ -31,6 +31,7 @@ export class UsuarioMapper extends AbstractMapper<
       nome: usuario.nome,
       telefone: usuario.telefone,
       cidade: cidade.identificador,
+      cidade_nome: cidade.nome,
       trabalhos: vinculosProfissionais.map((vinculo) => {
         const profissao = vinculo.profissao;
         const categoria = profissao?.categoriaProfissional;

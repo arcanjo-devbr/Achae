@@ -285,3 +285,141 @@ test("UsuarioController lista usuários com resposta 200", async () => {
     assert.deepEqual(await resposta.json(), [usuarioResponse]);
   });
 });
+
+test("UsuarioController combina nome, categoria e profissão na busca", async () => {
+  const filtrosRecebidos: unknown[] = [];
+  const usuarioService: IUsuarioService = {
+    criarUsuario: async () => usuarioResponse,
+    buscarUsuario: async () => [],
+    buscarUsuarioComFiltros: async (filtros) => {
+      filtrosRecebidos.push(filtros);
+      return [usuarioResponse];
+    },
+  };
+  const aplicativo = express();
+  aplicativo.get("/", new UsuarioController(usuarioService).buscarUsuarios);
+
+  await comServidorHttp(aplicativo, async (urlBase) => {
+    const resposta = await fetch(
+      `${urlBase}/?busca=Maria&categorias=Elétrica,Hidráulica&profissao=Eletricista`,
+    );
+
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(await resposta.json(), [usuarioResponse]);
+    assert.deepEqual(filtrosRecebidos, [
+      {
+        nome: "Maria",
+        categoria: ["Elétrica", "Hidráulica"],
+        profissao: "Eletricista",
+      },
+    ]);
+  });
+});
+
+test("UsuarioController busca usuário por ID para os detalhes", async () => {
+  let idRecebido: string | undefined;
+  const usuarioService: IUsuarioService = {
+    criarUsuario: async () => usuarioResponse,
+    buscarUsuario: async () => [usuarioResponse],
+    buscarUsuarioPorId: async (id) => {
+      idRecebido = id;
+      return usuarioResponse;
+    },
+  };
+  const aplicativo = express();
+  aplicativo.get(
+    "/:id",
+    new UsuarioController(usuarioService).buscarUsuarioPorId,
+  );
+
+  await comServidorHttp(aplicativo, async (urlBase) => {
+    const resposta = await fetch(`${urlBase}/${usuarioResponse.id}`);
+
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(await resposta.json(), usuarioResponse);
+    assert.equal(idRecebido, usuarioResponse.id);
+  });
+});
+
+test("UsuarioController edita usuário pelo ID", async () => {
+  let idRecebido: string | undefined;
+  let dadosRecebidos: unknown;
+  const usuarioService: IUsuarioService = {
+    criarUsuario: async () => usuarioResponse,
+    buscarUsuario: async () => [usuarioResponse],
+    buscarUsuarioPorId: async () => usuarioResponse,
+    editarUsuario: async (id, dados) => {
+      idRecebido = id;
+      dadosRecebidos = dados;
+      return usuarioResponse;
+    },
+  };
+  const aplicativo = express();
+  aplicativo.use(express.json());
+  aplicativo.put(
+    "/:id",
+    new UsuarioController(usuarioService).editarUsuario,
+  );
+
+  await comServidorHttp(aplicativo, async (urlBase) => {
+    const resposta = await fetch(`${urlBase}/${usuarioResponse.id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        nome: "Maria Silva",
+        telefone: "83999999999",
+        cidade: 1,
+        trabalhos: [
+          {
+            profissao: "Eletricista",
+            categoria: "Elétrica",
+            status: true,
+            descricao: "Instalações",
+          },
+        ],
+      }),
+    });
+
+    assert.equal(resposta.status, 200);
+    assert.deepEqual(await resposta.json(), usuarioResponse);
+    assert.equal(idRecebido, usuarioResponse.id);
+    assert.deepEqual(dadosRecebidos, {
+      nome: "Maria Silva",
+      telefone: "83999999999",
+      cidade: 1,
+      trabalhos: [
+        {
+          profissao: "Eletricista",
+          categoria: "Elétrica",
+          status: true,
+          descricao: "Instalações",
+        },
+      ],
+    });
+  });
+});
+
+test("UsuarioController exclui usuário pelo ID", async () => {
+  let idRecebido: string | undefined;
+  const usuarioService: IUsuarioService = {
+    criarUsuario: async () => usuarioResponse,
+    buscarUsuario: async () => [usuarioResponse],
+    excluirUsuario: async (id) => {
+      idRecebido = id;
+    },
+  };
+  const aplicativo = express();
+  aplicativo.delete(
+    "/:id",
+    new UsuarioController(usuarioService).excluirUsuario,
+  );
+
+  await comServidorHttp(aplicativo, async (urlBase) => {
+    const resposta = await fetch(`${urlBase}/${usuarioResponse.id}`, {
+      method: "DELETE",
+    });
+
+    assert.equal(resposta.status, 204);
+    assert.equal(idRecebido, usuarioResponse.id);
+  });
+});
